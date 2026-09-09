@@ -104,18 +104,7 @@
         </div>
     </footer>
 
-    <!-- Lógica de prueba con Supabase (Opcional para conectar con la sesión) -->
-    <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
-        
-        // Puedes enlazar aquí tus credenciales públicas de Supabase si deseas verificar sesión activa
-        // const supabase = createClient('TU_URL', 'TU_ANON_KEY')
-
-        document.getElementById('btn-logout').addEventListener('click', () => {
-            // Simulación de cierre de sesión o redirección al login
-            alert('Sesión cerrada correctamente');
-            window.location.href = '/index.html'; // Cambiar a tu vista de login si procede
-        });
-    </script>
+    <!-- Script modularizado -->
+    <script type="module" src="gestenergetica.js"></script>
 </body>
 </html>
