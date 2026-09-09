@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Privado | Gestión Energética</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-header {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-emerald-500 selection:text-white">
+
+    <!-- FONDO CON EFECTO SUTIL -->
+    <div class="fixed inset-0 z-0 pointer-events-none">
+        <div class="absolute inset-0 bg-gradient-to-tr from-slate-950 via-slate-900/40 to-slate-950"></div>
+        <div class="absolute -top-40 -left-40 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl"></div>
+    </div>
+
+    <!-- HEADER / NAVEGACIÓN PRINCIPAL -->
+    <header class="relative z-10 w-full border-b border-slate-800/60 glass-header">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <!-- Logotipo / Marca -->
+            <a href="index.html" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+                    <svg class="w-5 h-5 text-slate-950" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <span class="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300">
+                    Energetica<span class="text-emerald-400">Hub</span>
+                </span>
+            </a>
+
+            <!-- Menú de navegación (2 opciones exactas) -->
+            <nav class="flex items-center gap-2 sm:gap-4">
+                <a href="suministros.html" 
+                   class="px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all duration-200">
+                    Suministros
+                </a>
+                
+                <a href="gestenergatica.html" 
+                   class="px-4 py-2 rounded-lg text-sm font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 shadow-lg shadow-emerald-900/20">
+                    Panel Privado
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL: TARJETA DE LOGIN -->
+    <main class="relative z-10 max-w-md w-full mx-auto px-6 my-auto py-12">
+        <div class="glass-card border border-slate-800/80 rounded-2xl p-8 shadow-2xl shadow-slate-950/50">
+            
+            <!-- Cabecera del formulario -->
+            <div class="text-center mb-8">
+                <div class="w-12 h-12 mx-auto mb-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-xl">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight text-white">Acceso Privado</h1>
+                <p class="text-sm text-slate-400 mt-1">Gestión Energética y Datos Sensibles</p>
+            </div>
+
+            <!-- Formulario -->
+            <form id="loginForm" class="space-y-5">
+                <div>
+                    <label for="dni" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">Usuario o Identificador</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                            <i class="fa-regular fa-user text-sm"></i>
+                        </span>
+                        <input type="text" id="dni" required 
+                               placeholder="Introduce tu usuario" 
+                               autocomplete="username"
+                               class="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">Contraseña</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                            <i class="fa-solid fa-key text-sm"></i>
+                        </span>
+                        <input type="password" id="password" required 
+                               placeholder="••••••••" 
+                               autocomplete="current-password"
+                               class="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all">
+                    </div>
+                </div>
+
+                <button type="submit" 
+                        class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-semibold text-sm hover:opacity-95 transition-all duration-200 shadow-lg shadow-emerald-500/20 active:scale-[0.98]">
+                    Entrar al Sistema
+                </button>
+            </form>
+
+            <!-- Mensaje de error dinámico -->
+            <p id="loginError" class="mt-4 text-center text-xs text-rose-400 font-medium"></p>
+
+            <!-- Enlaces adicionales de navegación secundaria -->
+            <div class="mt-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-3">
+                <a href="index.html" class="hover:text-emerald-400 transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrow-left"></i> Volver al inicio
+                </a>
+                <a href="registro.html" class="hover:text-emerald-400 transition-colors">
+                    Solicitar alta <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="relative z-10 w-full border-t border-slate-900 bg-slate-950/60 py-6">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+            <p>&copy; 2026 Gestor Energético. Todos los derechos reservados.</p>
+            <div class="flex items-center gap-6">
+                <span class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Supabase Connected
+                </span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Script de autenticación -->
+    <script type="module" src="assets/js/login.js"></script>
+</body>
+</html>
