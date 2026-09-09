@@ -1,11 +1,12 @@
-// gestion/gestenergatica.js - Lógica del Panel Privado
+// gestion/gestenergetica.js - Lógica del Panel Privado
 import { supabase } from '../assets/js/supabaseClient.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
-    const userEmailSpan = document.getElementById('user-email');
-    const userDniDiv = document.getElementById('user-dni');
-    const btnLogout = document.getElementById('btn-logout');
+// Al ser un script type="module", se ejecuta con el DOM ya listo. No envuelvas en DOMContentLoaded.
+const userEmailSpan = document.getElementById('user-email');
+const userDniDiv = document.getElementById('user-dni');
+const btnLogout = document.getElementById('btn-logout');
 
+async function iniciarPanel() {
     try {
         // 1. Verificar si hay una sesión activa en Supabase
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -30,27 +31,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Error al comprobar la sesión:", err);
         window.location.href = "../login.html";
     }
+}
 
-    // 3. Manejo del cierre de sesión
-    if (btnLogout) {
-        btnLogout.addEventListener('click', async (e) => {
-            e.preventDefault();
-            console.log("Botón de cerrar sesión pulsado.");
+// 3. Manejo del cierre de sesión
+if (btnLogout) {
+    btnLogout.addEventListener('click', async (e) => {
+        e.preventDefault();
+        console.log("Botón de cerrar sesión pulsado.");
 
-            try {
-                const { error } = await supabase.auth.signOut();
-                if (error) {
-                    console.error("Error de Supabase al cerrar sesión:", error);
-                }
-            } catch (err) {
-                console.error("Excepción al cerrar sesión:", err);
-            } finally {
-                // Forzar redirección limpia usando ruta relativa
-                console.log("Redirigiendo a login.html...");
-                window.location.href = "../login.html";
+        try {
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                console.error("Error de Supabase al cerrar sesión:", error);
             }
-        });
-    } else {
-        console.warn("No se encontró el botón con ID 'btn-logout' en el DOM.");
-    }
-});
+        } catch (err) {
+            console.error("Excepción al cerrar sesión:", err);
+        } finally {
+            console.log("Redirigiendo a login.html...");
+            window.location.href = "../login.html";
+        }
+    });
+} else {
+    console.warn("No se encontró el botón con ID 'btn-logout' en el DOM.");
+}
+
+// Ejecutar la verificación inicial
+iniciarPanel();
