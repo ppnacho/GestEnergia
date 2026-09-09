@@ -1,9 +1,10 @@
-// assets/js/loadcsv.js - Lógica para la carga de ficheros CSV con formato de fecha corregido
+// assets/js/loadcsv.js - Lógica para la carga de ficheros CSV y consulta mediante Edge Functions
 import { supabase } from './supabaseClient.js';
 
 const fileInput = document.getElementById('csv-file-input');
 const btnUpload = document.getElementById('btn-upload-csv');
 const statusDiv = document.getElementById('upload-status');
+const textoUltimoPeriodo = document.getElementById('texto-ultimo-periodo');
 
 async function verificarSesion() {
     try {
@@ -34,6 +35,28 @@ function mostrarEstado(mensaje, tipo = 'info') {
     statusDiv.textContent = mensaje;
 }
 
+// Obtener el último periodo llamando a una Edge Function (sin consultas directas a tablas)
+async function consultarUltimoPeriodo() {
+    if (!textoUltimoPeriodo) return;
+
+    try {
+        const { data, error } = await supabase.functions.invoke('load-last-register');
+
+        if (error) {
+            throw new Error(error.message || 'Error al invocar la Edge Function');
+        }
+
+        if (data && data.periodo) {
+            textoUltimoPeriodo.textContent = data.periodo;
+        } else {
+            textoUltimoPeriodo.textContent = "No hay registros previos (tabla vacía)";
+        }
+    } catch (err) {
+        console.error("Error al consultar el último periodo:", err);
+        textoUltimoPeriodo.textContent = "Error al consultar";
+    }
+}
+
 async function procesarCSV() {
     const sesionValida = await verificarSesion();
     if (!sesionValida) return;
@@ -56,12 +79,11 @@ async function procesarCSV() {
             const registros = [];
 
             for (let i = 1; i < lineas.length; i++) {
-                const linea = lineas[i].trim(); // <-- Aquí estaba el fallo (era lineas[i])
+                const linea = lineas[i].trim();
                 if (!linea) continue;
 
                 const columnas = linea.split(';');
                 if (columnas.length >= 6) {
-                    // Normalizar la fecha: cambiar barras '/' por guiones '-'
                     const fechaRaw = columnas[1].trim();
                     const fechaFormateada = fechaRaw.replace(/\//g, '-');
 
@@ -106,6 +128,9 @@ async function procesarCSV() {
             mostrarEstado(`¡Carga completada con éxito! Se han procesado ${registros.length} registros correctamente.`, "success");
             fileInput.value = "";
 
+            // Actualizar en pantalla el nuevo último periodo tras la subida exitosa
+            consultarUltimoPeriodo();
+
         } catch (err) {
             console.error("Error detallado durante el proceso:", err);
             mostrarEstado("Error al cargar los datos: " + err.message, "error");
@@ -126,4 +151,9 @@ if (btnUpload) {
     btnUpload.addEventListener('click', procesarCSV);
 }
 
-verificarSesion();
+// Inicialización al cargar la página
+verificarSesion().then((valida) => {
+    if (valida) {
+        consultarUltimoPeriodo();
+    }
+});
