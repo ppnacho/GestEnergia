@@ -1,12 +1,20 @@
-// assets/js/loadcsv.js - Lógica para la carga de ficheros CSV
+// assets/js/loadcsv.js - Lógica para la carga de ficheros CSV con depuración
 import { supabase } from './supabaseClient.js';
+
+console.log("loadcsv.js cargado correctamente.");
 
 // Elementos del DOM
 const fileInput = document.getElementById('csv-file-input');
 const btnUpload = document.getElementById('btn-upload-csv');
 const statusDiv = document.getElementById('upload-status');
 
-// 1. Verificar sesión activa al cargar la página
+console.log("Elementos encontrados:", { 
+    fileInput: !!fileInput, 
+    btnUpload: !!btnUpload, 
+    statusDiv: !!statusDiv 
+});
+
+// Verificar sesión activa al cargar la página
 async function verificarSesion() {
     try {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -25,6 +33,7 @@ async function verificarSesion() {
 
 // Mostrar mensajes de estado en la interfaz
 function mostrarEstado(mensaje, tipo = 'info') {
+    if (!statusDiv) return;
     statusDiv.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'bg-red-50', 'text-red-800', 'bg-blue-50', 'text-blue-800');
     
     if (tipo === 'success') {
@@ -38,8 +47,9 @@ function mostrarEstado(mensaje, tipo = 'info') {
     statusDiv.textContent = mensaje;
 }
 
-// 2. Procesar el fichero CSV y mapear columnas
+// Procesar el fichero CSV y mapear columnas
 async function procesarCSV() {
+    console.log("Botón CargaCSV pulsado.");
     const sesionValida = await verificarSesion();
     if (!sesionValida) return;
 
@@ -60,10 +70,9 @@ async function procesarCSV() {
             const lineas = texto.split(/\r\n|\n/);
             const registros = [];
 
-            // Omitimos la primera línea (cabeceras: CUPS;FECHA-HORA;INV / VER;...)
             for (let i = 1; i < lineas.length; i++) {
                 const linea = lineas[i].trim();
-                if (!linea) continue; // Saltar líneas vacías
+                if (!linea) continue;
 
                 const columnas = linea.split(';');
                 if (columnas.length >= 6) {
@@ -86,9 +95,8 @@ async function procesarCSV() {
 
             mostrarEstado(`Procesados ${registros.length} registros. Enviando a la Edge Function...`, "info");
 
-            // 3. Llamar a la Edge Function de Supabase para insertar en la tabla 'consumos'
             const { data, error } = await supabase.functions.invoke('carga-consumos', {
-              body: { registros }
+                body: { registros }
             });
 
             if (error) {
@@ -96,7 +104,7 @@ async function procesarCSV() {
             }
 
             mostrarEstado(`¡Carga completada con éxito! Se han procesado ${registros.length} registros correctamente.`, "success");
-            fileInput.value = ""; // Limpiar selector
+            fileInput.value = "";
 
         } catch (err) {
             console.error("Error durante el proceso de carga:", err);
@@ -114,10 +122,13 @@ async function procesarCSV() {
     reader.readAsText(file, 'UTF-8');
 }
 
-// Evento click del botón de carga
+// Registrar el evento del botón de forma segura
 if (btnUpload) {
     btnUpload.addEventListener('click', procesarCSV);
+    console.log("EventListener añadido correctamente al botón 'btn-upload-csv'.");
+} else {
+    console.error("¡No se ha encontrado el botón con ID 'btn-upload-csv' en el DOM!");
 }
 
-// Verificación inicial de sesión al abrir el script
+// Verificación inicial
 verificarSesion();
