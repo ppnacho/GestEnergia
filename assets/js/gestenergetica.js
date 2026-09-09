@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (sessionError || !session) {
             // Si no hay sesión válida, expulsar al usuario al login principal
             console.warn("No hay sesión activa. Redirigiendo al login...");
-            window.location.href = "../login.html";
+            window.location.href = "/GestEnergia/login.html";
             return;
         }
 
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     } catch (err) {
         console.error("Error al comprobar la sesión:", err);
-        window.location.href = "../login.html";
+        window.location.href = "/GestEnergia/login.html";
     }
 
     // 3. Manejo del cierre de sesión
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (error) throw error;
                 
                 // Redirigir a la página de login en la raíz
-                window.location.href = "../login.html";
+                window.location.href = "/GestEnergia/login.html";
             } catch (err) {
                 console.error("Error al cerrar sesión:", err);
                 alert("Hubo un problema al cerrar la sesión.");
