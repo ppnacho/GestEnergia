@@ -1,7 +1,5 @@
-// assets/js/login.js - Lógica de autenticación con Supabase
-
-// Si vas a usar Supabase directamente aquí, importarás tu cliente configurado:
-// import { supabase } from './supabaseClient.js';
+// assets/js/login.js - Lógica de autenticación usando DNI
+import { supabase } from './supabaseClient.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
@@ -14,40 +12,37 @@ document.addEventListener('DOMContentLoaded', () => {
             // Limpiar errores previos
             loginError.textContent = '';
 
-            const userInput = document.getElementById('dni').value.trim();
+            // Recogemos el DNI introducido por el usuario
+            const dniInput = document.getElementById('dni').value.trim().toLowerCase();
             const passwordInput = document.getElementById('password').value;
 
+            const submitButton = loginForm.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+
             try {
-                // Indicador visual de carga opcional
-                const submitButton = loginForm.querySelector('button[type="submit"]');
-                const originalText = submitButton.textContent;
                 submitButton.textContent = 'Verificando...';
                 submitButton.disabled = true;
 
-                // TODO: Aquí realizaremos la llamada real a Supabase Auth
-                // Ejemplo con Supabase:
-                /*
+                // REGLA DE TRADUCCIÓN: Convertimos el DNI al formato de email interno 
+                // que usa Supabase Auth (ajústalo si tu dominio interno es diferente, ej: "@gestenergia.local")
+                const emailInterno = `${dniInput}@gestenergia.local`;
+
+                // Llamada real a Supabase Auth usando el email interno derivado del DNI
                 const { data, error } = await supabase.auth.signInWithPassword({
-                    email: userInput, // o el campo que uses como identificador
+                    email: emailInterno,
                     password: passwordInput,
                 });
 
                 if (error) throw error;
-                */
 
-                // Simulación provisional de éxito para pruebas de diseño:
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                // Redirección al panel protegido una vez autenticado con éxito
+                // Si las credenciales son correctas, entramos al panel protegido
                 window.location.href = "gestion/gestenergetica.html";
 
             } catch (error) {
                 console.error("Error en el login:", error);
-                loginError.textContent = error.message || "Credenciales incorrectas. Por favor, inténtalo de nuevo.";
+                loginError.textContent = "Acceso denegado: DNI o contraseña incorrectos.";
                 
-                // Restaurar botón
-                const submitButton = loginForm.querySelector('button[type="submit"]');
-                submitButton.textContent = 'Entrar al Sistema';
+                submitButton.textContent = originalText;
                 submitButton.disabled = false;
             }
         });
