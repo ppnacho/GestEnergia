@@ -1,5 +1,5 @@
 // gestion/gestenergetica.js - Lógica del Panel Privado
-import { supabase } from '../assets/js/supabaseClient.js';
+import { supabase } from './supabaseClient.js';
 
 // Al ser un script type="module", se ejecuta con el DOM ya listo. No envuelvas en DOMContentLoaded.
 const userEmailSpan = document.getElementById('user-email');
