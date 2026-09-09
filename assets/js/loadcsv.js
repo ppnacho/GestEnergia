@@ -56,12 +56,12 @@ async function procesarCSV() {
             const registros = [];
 
             for (let i = 1; i < lineas.length; i++) {
-                const linea = lineas.trim();
+                const linea = lineas[i].trim(); // <-- Aquí estaba el fallo (era lineas[i])
                 if (!linea) continue;
 
                 const columnas = linea.split(';');
                 if (columnas.length >= 6) {
-                    // Normalizar la fecha: cambiar barras '/' por guiones '-' para formato PostgreSQL (YYYY-MM-DD HH:mm)
+                    // Normalizar la fecha: cambiar barras '/' por guiones '-'
                     const fechaRaw = columnas[1].trim();
                     const fechaFormateada = fechaRaw.replace(/\//g, '-');
 
