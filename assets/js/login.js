@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
                 // Redirección al panel protegido una vez autenticado con éxito
-                window.location.href = "gestion/gestenergatica.html";
+                window.location.href = "gestion/gestenergetica.html";
 
             } catch (error) {
                 console.error("Error en el login:", error);
