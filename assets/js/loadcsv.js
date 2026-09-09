@@ -43,7 +43,19 @@ async function consultarUltimoPeriodo() {
         const { data, error } = await supabase.functions.invoke('load-last-register');
 
         if (error) {
-            throw new Error(error.message || 'Error al invocar la Edge Function');
+            // Intentar extraer el mensaje real devuelto por la Edge Function
+            let serverErrorMsg = error.message;
+            try {
+                if (error.context && typeof error.context.json === 'function') {
+                    const errorBody = await error.context.json();
+                    if (errorBody && errorBody.error) {
+                        serverErrorMsg = errorBody.error;
+                    }
+                }
+            } catch (e) {
+                // Si no se puede parsear, nos quedamos con el mensaje por defecto
+            }
+            throw new Error(serverErrorMsg);
         }
 
         if (data && data.periodo) {
@@ -52,7 +64,7 @@ async function consultarUltimoPeriodo() {
             textoUltimoPeriodo.textContent = "No hay registros previos (tabla vacía)";
         }
     } catch (err) {
-        console.error("Error al consultar el último periodo:", err);
+        console.error("Error al consultar el último periodo:", err.message);
         textoUltimoPeriodo.textContent = "Error al consultar";
     }
 }
