@@ -1,1 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GestEnergética - Panel de Control</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col">
 
+    <!-- Header / Barra Superior -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-xl shadow-md shadow-emerald-600/20">
+                    ⚡
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">GestEnergética</h1>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <span id="user-email" class="text-sm font-medium text-slate-600 hidden sm:inline">Cargando usuario...</span>
+                <button id="btn-logout" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-200">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Tarjeta de Bienvenida / Estado -->
+        <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-emerald-900/10 mb-8">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-2">¡Bienvenido al Panel de Control!</h2>
+            <p class="text-emerald-100 max-w-2xl text-sm sm:text-base">
+                Sistema de gestión y monitorización energética avanzado. Aquí podrás supervisar tus suministros, consumos y estados en tiempo real.
+            </p>
+        </div>
+
+        <!-- Cuadrícula de Métricas / Resumen -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Métrica 1 -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm font-medium text-slate-500">Estado del Sistema</span>
+                    <span class="p-2 bg-emerald-50 text-emerald-600 rounded-lg text-lg">🟢</span>
+                </div>
+                <div class="text-2xl font-bold text-slate-900">Operativo</div>
+                <p class="text-xs text-slate-500 mt-1">Conexión establecida con Supabase</p>
+            </div>
+
+            <!-- Métrica 2 -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm font-medium text-slate-500">Suministros Asociados</span>
+                    <span class="p-2 bg-blue-50 text-blue-600 rounded-lg text-lg">📊</span>
+                </div>
+                <div id="num-suministros" class="text-2xl font-bold text-slate-900">--</div>
+                <p class="text-xs text-slate-500 mt-1">Puntos de suministro activos</p>
+            </div>
+
+            <!-- Métrica 3 -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm font-medium text-slate-500">Perfil de Usuario</span>
+                    <span class="p-2 bg-amber-50 text-amber-600 rounded-lg text-lg">👤</span>
+                </div>
+                <div id="user-dni" class="text-2xl font-bold text-slate-900">--------</div>
+                <p class="text-xs text-slate-500 mt-1">DNI / NIE Verificado</p>
+            </div>
+        </div>
+
+        <!-- Sección de Accesos / Acciones -->
+        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-900 mb-4">Acciones Rápidas</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <button class="p-4 text-left border border-slate-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50/50 transition-all group">
+                    <h4 class="font-semibold text-slate-900 group-hover:text-emerald-700">Ver Suministros</h4>
+                    <p class="text-xs text-slate-500 mt-1">Consulta el detalle de potencia y tarifas.</p>
+                </button>
+                <button class="p-4 text-left border border-slate-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50/50 transition-all group">
+                    <h4 class="font-semibold text-slate-900 group-hover:text-emerald-700">Historial de Consumo</h4>
+                    <p class="text-xs text-slate-500 mt-1">Gráficas y estadísticas temporales.</p>
+                </button>
+                <button class="p-4 text-left border border-slate-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50/50 transition-all group">
+                    <h4 class="font-semibold text-slate-900 group-hover:text-emerald-700">Configuración</h4>
+                    <p class="text-xs text-slate-500 mt-1">Actualiza tus datos personales o contraseña.</p>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            GestEnergética &copy; 2026 - Todos los derechos reservados.
+        </div>
+    </footer>
+
+    <!-- Lógica de prueba con Supabase (Opcional para conectar con la sesión) -->
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+        
+        // Puedes enlazar aquí tus credenciales públicas de Supabase si deseas verificar sesión activa
+        // const supabase = createClient('TU_URL', 'TU_ANON_KEY')
+
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            // Simulación de cierre de sesión o redirección al login
+            alert('Sesión cerrada correctamente');
+            window.location.href = 'index.html'; // Cambiar a tu vista de login si procede
+        });
+    </script>
+</body>
+</html>
