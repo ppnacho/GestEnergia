@@ -34,63 +34,18 @@
     <!-- Contenido Principal -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        <!-- Tarjeta de Bienvenida / Estado -->
-        <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-emerald-900/10 mb-8">
-            <h2 class="text-2xl sm:text-3xl font-bold mb-2">¡Bienvenido al Panel de Control!</h2>
-            <p class="text-emerald-100 max-w-2xl text-sm sm:text-base">
-                Sistema de gestión y monitorización energética avanzado. Aquí podrás supervisar tus suministros, consumos y estados en tiempo real.
-            </p>
-        </div>
-
-        <!-- Cuadrícula de Métricas / Resumen -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <!-- Métrica 1 -->
-            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-sm font-medium text-slate-500">Estado del Sistema</span>
-                    <span class="p-2 bg-emerald-50 text-emerald-600 rounded-lg text-lg">🟢</span>
-                </div>
-                <div class="text-2xl font-bold text-slate-900">Operativo</div>
-                <p class="text-xs text-slate-500 mt-1">Conexión establecida con Supabase</p>
+        <!-- Tarjeta de Bienvenida con Botón CargaCSV alineado a la derecha -->
+        <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-emerald-900/10 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div>
+                <h2 class="text-2xl sm:text-3xl font-bold mb-2">¡Bienvenido al Panel de Control!</h2>
+                <p class="text-emerald-100 max-w-2xl text-sm sm:text-base">
+                    Sistema de gestión y monitorización energética avanzado. Aquí podrás supervisar tus suministros, consumos y estados en tiempo real.
+                </p>
             </div>
-
-            <!-- Métrica 2 -->
-            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-sm font-medium text-slate-500">Suministros Asociados</span>
-                    <span class="p-2 bg-blue-50 text-blue-600 rounded-lg text-lg">📊</span>
-                </div>
-                <div id="num-suministros" class="text-2xl font-bold text-slate-900">--</div>
-                <p class="text-xs text-slate-500 mt-1">Puntos de suministro activos</p>
-            </div>
-
-            <!-- Métrica 3 -->
-            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-sm font-medium text-slate-500">Perfil de Usuario</span>
-                    <span class="p-2 bg-amber-50 text-amber-600 rounded-lg text-lg">👤</span>
-                </div>
-                <div id="user-dni" class="text-2xl font-bold text-slate-900">--------</div>
-                <p class="text-xs text-slate-500 mt-1">DNI / NIE Verificado</p>
-            </div>
-        </div>
-
-        <!-- Sección de Accesos / Acciones -->
-        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-            <h3 class="text-lg font-bold text-slate-900 mb-4">Acciones Rápidas</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <button class="p-4 text-left border border-slate-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50/50 transition-all group">
-                    <h4 class="font-semibold text-slate-900 group-hover:text-emerald-700">Ver Suministros</h4>
-                    <p class="text-xs text-slate-500 mt-1">Consulta el detalle de potencia y tarifas.</p>
-                </button>
-                <button class="p-4 text-left border border-slate-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50/50 transition-all group">
-                    <h4 class="font-semibold text-slate-900 group-hover:text-emerald-700">Historial de Consumo</h4>
-                    <p class="text-xs text-slate-500 mt-1">Gráficas y estadísticas temporales.</p>
-                </button>
-                <button class="p-4 text-left border border-slate-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50/50 transition-all group">
-                    <h4 class="font-semibold text-slate-900 group-hover:text-emerald-700">Configuración</h4>
-                    <p class="text-xs text-slate-500 mt-1">Actualiza tus datos personales o contraseña.</p>
-                </button>
+            <div class="flex-shrink-0">
+                <a href="../load/loadcsv.html" class="bg-white text-emerald-700 hover:bg-emerald-50 px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-md inline-flex items-center space-x-2">
+                    <span>CargaCSV</span>
+                </a>
             </div>
         </div>
 
