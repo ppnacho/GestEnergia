@@ -11,9 +11,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError || !session) {
-            // Si no hay sesión válida, expulsar al usuario al login principal
             console.warn("No hay sesión activa. Redirigiendo al login...");
-            window.location.href = "/GestEnergia/login.html";
+            window.location.href = "../login.html";
             return;
         }
 
@@ -21,31 +20,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         const user = session.user;
         const email = user.email || "";
         
-        // Mostrar el email o extraer el DNI del correo (ej: 09248666k@gestenergetica.local -> 09248666k)
-        userEmailSpan.textContent = email;
+        if (userEmailSpan) userEmailSpan.textContent = email;
         const dniExtraido = email.split('@')[0].toUpperCase();
-        userDniDiv.textContent = dniExtraido;
+        if (userDniDiv) userDniDiv.textContent = dniExtraido;
 
         console.log("Sesión activa para:", email);
 
     } catch (err) {
         console.error("Error al comprobar la sesión:", err);
-        window.location.href = "/GestEnergia/login.html";
+        window.location.href = "../login.html";
     }
 
     // 3. Manejo del cierre de sesión
     if (btnLogout) {
-        btnLogout.addEventListener('click', async () => {
+        btnLogout.addEventListener('click', async (e) => {
+            e.preventDefault();
+            console.log("Botón de cerrar sesión pulsado.");
+
             try {
                 const { error } = await supabase.auth.signOut();
-                if (error) throw error;
-                
-                // Redirigir a la página de login en la raíz
-                window.location.href = "/GestEnergia/login.html";
+                if (error) {
+                    console.error("Error de Supabase al cerrar sesión:", error);
+                }
             } catch (err) {
-                console.error("Error al cerrar sesión:", err);
-                alert("Hubo un problema al cerrar la sesión.");
+                console.error("Excepción al cerrar sesión:", err);
+            } finally {
+                // Forzar redirección limpia usando ruta relativa
+                console.log("Redirigiendo a login.html...");
+                window.location.href = "../login.html";
             }
         });
+    } else {
+        console.warn("No se encontró el botón con ID 'btn-logout' en el DOM.");
     }
 });
