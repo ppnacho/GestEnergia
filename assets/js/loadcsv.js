@@ -1,5 +1,5 @@
 // assets/js/loadcsv.js - Lógica para la carga de ficheros CSV
-import { supabase } from '../assets/js/supabaseClient.js';
+import { supabase } from './supabaseClient.js';
 
 // Elementos del DOM
 const fileInput = document.getElementById('csv-file-input');
