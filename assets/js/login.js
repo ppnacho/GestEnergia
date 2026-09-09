@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // REGLA DE TRADUCCIÓN: Convertimos el DNI al formato de email interno 
                 // que usa Supabase Auth (ajústalo si tu dominio interno es diferente, ej: "@gestenergia.local")
-                const emailInterno = `${dniInput}@gestenergia.local`;
+                const emailInterno = `${dniInput}@gestenergetica.local`;
 
                 // Llamada real a Supabase Auth usando el email interno derivado del DNI
                 const { data, error } = await supabase.auth.signInWithPassword({
