@@ -63,10 +63,11 @@ async function cargarDatosGrafico() {
 
         if (error) throw error;
 
-        // Renderizar la cuadrícula de anillos concéntricos con los 6 arrays de datos
+        // Renderizar con los datos de consumo, generación y los nuevos costes económicos
         renderizarAnillosMensuales(
             data.mesesConsumoPunta, data.mesesConsumoValle, data.mesesConsumoLlano,
-            data.mesesGeneracionPunta, data.mesesGeneracionValle, data.mesesGeneracionLlano
+            data.mesesGeneracionPunta, data.mesesGeneracionValle, data.mesesGeneracionLlano,
+            data.mesesCosteConsumo, data.mesesValorGeneracion
         );
 
     } catch (err) {
@@ -76,7 +77,7 @@ async function cargarDatosGrafico() {
 
 const mesesNombres = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle, g_llano) {
+function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle, g_llano, coste_consumo, valor_generacion) {
     const gridContainer = document.getElementById('meses-grid');
     if (!gridContainer) return;
 
@@ -104,9 +105,30 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
         canvas.id = `chart-mes-${i}`;
         canvasWrapper.appendChild(canvas);
         card.appendChild(canvasWrapper);
+
+        // Obtener los valores económicos particulares de este mes
+        const cc = coste_consumo ? (coste_consumo[i] || 0) : 0;
+        const vg = valor_generacion ? (valor_generacion[i] || 0) : 0;
+
+        // Añadir bloque de texto económico debajo del gráfico
+        const infoDiv = document.createElement('div');
+        infoDiv.style.marginTop = '8px';
+        infoDiv.style.fontSize = '11px';
+        infoDiv.style.fontWeight = '600';
+        infoDiv.style.lineHeight = '1.3';
+
+        const costeFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cc);
+        const generacionFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(vg);
+
+        infoDiv.innerHTML = `
+            <div style="color: #ef4444;">Consumo: ${costeFormatted}</div>
+            <div style="color: #10b981;">Gen.: ${generacionFormatted}</div>
+        `;
+        card.appendChild(infoDiv);
+
         gridContainer.appendChild(card);
 
-        // Obtener los valores particulares de este mes
+        // Obtener los valores de energía particulares de este mes
         const cp = c_punta[i] || 0;
         const cv = c_valle[i] || 0;
         const cl = c_llano[i] || 0;
@@ -169,14 +191,14 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
                                 // Formatear valor en kWh
                                 const valorStr = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 }).format(valor) + ' kWh';
                                 
-                                // Calcular porcentaje
-                                let porcentajeStr = '0%';
+                                // Calcular porcentaje con 2 decimales
+                                let porcentajeStr = '0,00%';
                                 if (totalDataset > 0) {
                                     const porcentaje = (valor / totalDataset) * 100;
-                                    porcentajeStr = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 }).format(porcentaje) + '%';
+                                    porcentajeStr = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(porcentaje) + '%';
                                 }
                                 
-                                // Devolver array para que salga en dos líneas (valor arriba, porcentaje abajo)
+                                // Devolver array para dos líneas: valor arriba, porcentaje abajo
                                 return [valorStr, porcentajeStr];
                             }
                         }
