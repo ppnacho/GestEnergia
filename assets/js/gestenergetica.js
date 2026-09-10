@@ -1,59 +1,99 @@
-// gestion/gestenergetica.js - Lógica del Panel Privado
 import { supabase } from './supabaseClient.js';
 
-// Al ser un script type="module", se ejecuta con el DOM ya listo. No envuelvas en DOMContentLoaded.
-const userEmailSpan = document.getElementById('user-email');
-const userDniDiv = document.getElementById('user-dni');
-const btnLogout = document.getElementById('btn-logout');
+let myChart = null;
 
-async function iniciarPanel() {
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Obtener la sesión activa (el cliente ya sabe quién está logueado)
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
     try {
-        // 1. Verificar si hay una sesión activa en Supabase
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // 2. Llamar a la Edge Function usando la instancia importada
+        const { data, error } = await supabase.functions.invoke('panel-datos', {
+            body: { action: 'init' }
+        });
 
-        if (sessionError || !session) {
-            console.warn("No hay sesión activa. Redirigiendo al login...");
-            window.location.href = "../login.html";
-            return;
-        }
+        if (error) throw error;
 
-        // 2. Extraer datos del usuario autenticado
-        const user = session.user;
-        const email = user.email || "";
-        
-        if (userEmailSpan) userEmailSpan.textContent = email;
-        const dniExtraido = email.split('@')[0].toUpperCase();
-        if (userDniDiv) userDniDiv.textContent = dniExtraido;
+        // Rellenar Suministros
+        const selectSuministro = document.getElementById('select-suministro');
+        data.suministros.forEach(sum => {
+            const opt = document.createElement('option');
+            opt.value = sum;
+            opt.textContent = sum;
+            selectSuministro.appendChild(opt);
+        });
 
-        console.log("Sesión activa para:", email);
+        // Rellenar Años
+        const selectAnio = document.getElementById('select-anio');
+        data.anos.forEach(ano => {
+            const opt = document.createElement('option');
+            opt.value = ano;
+            opt.textContent = ano;
+            selectAnio.appendChild(opt);
+        });
 
     } catch (err) {
-        console.error("Error al comprobar la sesión:", err);
-        window.location.href = "../login.html";
+        console.error("Error al inicializar panel:", err);
+    }
+
+    // Listeners de cambio en los filtros
+    document.getElementById('select-suministro').addEventListener('change', cargarDatosGrafico);
+    document.getElementById('select-anio').addEventListener('change', cargarDatosGrafico);
+});
+
+async function cargarDatosGrafico() {
+    const suministro = document.getElementById('select-suministro').value;
+    const anio = document.getElementById('select-anio').value;
+
+    if (!suministro || !anio) return;
+
+    try {
+        const { data, error } = await supabase.functions.invoke('panel-datos', {
+            body: { action: 'grafico', suministro, anio }
+        });
+
+        if (error) throw error;
+
+        renderizarGrafico(data.mesesConsumo, data.mesesGeneracion);
+
+    } catch (err) {
+        console.error("Error al obtener datos del gráfico:", err);
     }
 }
 
-// 3. Manejo del cierre de sesión
-if (btnLogout) {
-    btnLogout.addEventListener('click', async (e) => {
-        e.preventDefault();
-        console.log("Botón de cerrar sesión pulsado.");
+function renderizarGrafico(mesesConsumo, mesesGeneracion) {
+    const ctx = document.getElementById('chartConsumos').getContext('2d');
 
-        try {
-            const { error } = await supabase.auth.signOut();
-            if (error) {
-                console.error("Error de Supabase al cerrar sesión:", error);
+    if (myChart) {
+        myChart.destroy();
+    }
+
+    myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+            datasets: [
+                {
+                    label: 'Consumo (kWh)',
+                    data: mesesConsumo,
+                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                    borderRadius: 6
+                },
+                {
+                    label: 'Generación (kWh)',
+                    data: mesesGeneracion,
+                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                    borderRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
             }
-        } catch (err) {
-            console.error("Excepción al cerrar sesión:", err);
-        } finally {
-            console.log("Redirigiendo a login.html...");
-            window.location.href = "../login.html";
         }
     });
-} else {
-    console.warn("No se encontró el botón con ID 'btn-logout' en el DOM.");
 }
-
-// Ejecutar la verificación inicial
-iniciarPanel();
