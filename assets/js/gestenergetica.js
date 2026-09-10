@@ -69,14 +69,15 @@ async function cargarDatosGrafico() {
 
         if (error) throw error;
 
-        renderizarGrafico(data.mesesConsumo, data.mesesGeneracion);
+        // Renderizar con las 4 series de datos
+        renderizarGrafico(data.mesesPunta, data.mesesValle, data.mesesLlano, data.mesesGeneracion);
 
     } catch (err) {
         console.error("Error al obtener datos del gráfico:", err);
     }
 }
 
-function renderizarGrafico(mesesConsumo, mesesGeneracion) {
+function renderizarGrafico(punta, valle, llano, generacion) {
     const ctx = document.getElementById('chartConsumos').getContext('2d');
 
     if (myChart) {
@@ -89,24 +90,82 @@ function renderizarGrafico(mesesConsumo, mesesGeneracion) {
             labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
             datasets: [
                 {
-                    label: 'Consumo (kWh)',
-                    data: mesesConsumo,
-                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                    borderRadius: 6
+                    label: 'Punta',
+                    data: punta,
+                    backgroundColor: 'rgba(239, 68, 68, 0.85)', // Rojo / Naranja fuerte
+                    borderRadius: 4,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.85
                 },
                 {
-                    label: 'Generación (kWh)',
-                    data: mesesGeneracion,
-                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                    borderRadius: 6
+                    label: 'Valle',
+                    data: valle,
+                    backgroundColor: 'rgba(16, 185, 129, 0.85)', // Verde esmeralda
+                    borderRadius: 4,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.85
+                },
+                {
+                    label: 'Llano',
+                    data: llano,
+                    backgroundColor: 'rgba(245, 158, 11, 0.85)', // Ámbar / Naranja suave
+                    borderRadius: 4,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.85
+                },
+                {
+                    label: 'Generación',
+                    data: generacion,
+                    backgroundColor: 'rgba(14, 165, 233, 0.85)', // Azul cielo
+                    borderRadius: 4,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.85
                 }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: { family: 'Inter', weight: '500' },
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleFont: { family: 'Inter', size: 13 },
+                    bodyFont: { family: 'Inter', size: 12 },
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) label += ': ';
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 }).format(context.parsed.y) + ' kWh';
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
             scales: {
-                y: { beginAtZero: true }
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { family: 'Inter' } }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(241, 245, 249, 1)' },
+                    ticks: { 
+                        font: { family: 'Inter' },
+                        callback: function(value) { return value + ' kWh'; }
+                    }
+                }
             }
         }
     });
