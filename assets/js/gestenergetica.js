@@ -127,18 +127,20 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
                             'rgba(245, 158, 11, 0.85)', // Llano (Ámbar)
                             'rgba(16, 185, 129, 0.85)'  // Valle (Verde)
                         ],
-                        borderWidth: 0,
-                        weight: 2
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                        weight: 1.5
                     },
-                    // ANILLO INTERIOR: GENERACIÓN (Punta, Llano, Valle)
+                    // ANILLO INTERIOR: GENERACIÓN (Punta, Llano, Valle - Mismos colores)
                     {
                         data: [gp, gl, gv],
                         backgroundColor: [
-                            'rgba(59, 130, 246, 0.85)', // Punta (Azul fuerte)
-                            'rgba(14, 165, 233, 0.85)', // Llano (Azul cielo)
-                            'rgba(99, 102, 241, 0.85)'  // Valle (Índigo)
+                            'rgba(239, 68, 68, 0.55)',  // Punta (Rojo suave)
+                            'rgba(245, 158, 11, 0.55)', // Llano (Ámbar suave)
+                            'rgba(16, 185, 129, 0.55)'  // Valle (Verde suave)
                         ],
-                        borderWidth: 0,
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
                         weight: 1.2
                     }
                 ]
@@ -146,7 +148,8 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '45%', // Espacio interior para lograr el diseño concéntrico
+                cutout: '38%', // Deja un hueco interior perfecto
+                spacing: 3,    // Separa visualmente los bloques de las horas
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -165,10 +168,10 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
                                 else if (dataIndex === 1) tipoTarifa = 'Llano';
                                 else if (dataIndex === 2) tipoTarifa = 'Valle';
 
-                                const grupo = datasetIndex === 0 ? 'Consumo' : 'Generación';
+                                const grupo = datasetIndex === 0 ? 'Consumo (Exterior)' : 'Generación (Interior)';
                                 const valor = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 }).format(context.parsed);
                                 
-                                return `${grupo} (${tipoTarifa}): ${valor} kWh`;
+                                return `${grupo} - ${tipoTarifa}: ${valor} kWh`;
                             }
                         }
                     }
