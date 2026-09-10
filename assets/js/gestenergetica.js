@@ -3,12 +3,26 @@ import { supabase } from './supabaseClient.js';
 let myChart = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Obtener la sesión activa (el cliente ya sabe quién está logueado)
+    // 1. Configurar el botón de Cerrar Sesión
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', async () => {
+            const { error } = await supabase.auth.signOut();
+            if (!error) {
+                // Redirige a la página de login (ajusta la ruta si tu index/login está en otra carpeta)
+                window.location.href = '../index.html'; 
+            } else {
+                console.error('Error al cerrar sesión:', error.message);
+            }
+        });
+    }
+
+    // 2. Obtener la sesión activa
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
     try {
-        // 2. Llamar a la Edge Function usando la instancia importada
+        // 3. Llamar a la Edge Function para inicializar los desplegables
         const { data, error } = await supabase.functions.invoke('panel-datos', {
             body: { action: 'init' }
         });
