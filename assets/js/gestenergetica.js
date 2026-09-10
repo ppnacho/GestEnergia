@@ -110,19 +110,21 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
         const cc = coste_consumo ? (coste_consumo[i] || 0) : 0;
         const vg = valor_generacion ? (valor_generacion[i] || 0) : 0;
 
-        // Añadir bloque de texto económico debajo del gráfico
+        // Añadir bloque de texto económico debajo del gráfico (alineado a la izquierda y en negro)
         const infoDiv = document.createElement('div');
         infoDiv.style.marginTop = '8px';
         infoDiv.style.fontSize = '11px';
         infoDiv.style.fontWeight = '600';
-        infoDiv.style.lineHeight = '1.3';
+        infoDiv.style.lineHeight = '1.4';
+        infoDiv.style.textAlign = 'left';
+        infoDiv.style.paddingLeft = '6px'; // Margen sutil por la izquierda para que no pegue con el borde
 
         const costeFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cc);
         const generacionFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(vg);
 
         infoDiv.innerHTML = `
-            <div style="color: #ef4444;">Consumo: ${costeFormatted}</div>
-            <div style="color: #10b981;">Gen.: ${generacionFormatted}</div>
+            <div style="color: #000000;">Consumo: ${costeFormatted}</div>
+            <div style="color: #000000;">Generacion: ${generacionFormatted}</div>
         `;
         card.appendChild(infoDiv);
 
