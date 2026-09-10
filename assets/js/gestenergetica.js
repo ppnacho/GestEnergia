@@ -81,17 +81,26 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
     const gridContainer = document.getElementById('meses-grid');
     if (!gridContainer) return;
 
-    // Destruir gráficos anteriores si ya existían para evitar fugas de memoria o solapamientos
+    // Destruir gráficos anteriores
     miniCharts.forEach(chart => chart.destroy());
     miniCharts = [];
-
-    // Limpiar contenedor HTML previo
     gridContainer.innerHTML = '';
 
-    // Generar de Enero a Diciembre de izquierda a derecha
+    // Obtener año actual y mes actual (0 = Enero, 8 = Septiembre)
+    const fechaActual = new Date();
+    const anioActual = fechaActual.getFullYear();
+    const mesActualIndex = fechaActual.getMonth(); // 8 para septiembre en 2026
+    
+    // Obtener el año que el usuario tiene seleccionado en el desplegable
+    const selectAnio = document.getElementById('select-anio');
+    const anioSeleccionado = selectAnio ? parseInt(selectAnio.value, 10) : anioActual;
+
     mesesNombres.forEach((nombreMes, i) => {
         const card = document.createElement('div');
-        card.className = 'mes-card';
+        
+        // Marcar como incompleto SOLO si es el mes actual y estamos viendo el año actual
+        const esMesEnCurso = (anioSeleccionado === anioActual && i === mesActualIndex);
+        card.className = esMesEnCurso ? 'mes-card incompleto' : 'mes-card';
 
         const title = document.createElement('div');
         title.className = 'mes-titulo';
@@ -117,14 +126,14 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
         infoDiv.style.fontWeight = '600';
         infoDiv.style.lineHeight = '1.4';
         infoDiv.style.textAlign = 'left';
-        infoDiv.style.paddingLeft = '6px'; // Margen sutil por la izquierda para que no pegue con el borde
+        infoDiv.style.paddingLeft = '6px';
 
         const costeFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cc);
         const generacionFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(vg);
 
         infoDiv.innerHTML = `
             <div style="color: #000000;">Consumo: ${costeFormatted}</div>
-            <div style="color: #000000;">Generacion: ${generacionFormatted}</div>
+            <div style="color: #000000;">Gen.: ${generacionFormatted}</div>
         `;
         card.appendChild(infoDiv);
 
@@ -143,25 +152,25 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
             type: 'doughnut',
             data: {
                 datasets: [
-                    // ANILLO EXTERIOR: CONSUMO (Punta, Llano, Valle)
+                    // ANILLO EXTERIOR: CONSUMO
                     {
                         data: [cp, cl, cv],
                         backgroundColor: [
-                            'rgba(239, 68, 68, 0.85)',  // Punta (Rojo)
-                            'rgba(245, 158, 11, 0.85)', // Llano (Ámbar)
-                            'rgba(16, 185, 129, 0.85)'  // Valle (Verde)
+                            'rgba(239, 68, 68, 0.85)',  
+                            'rgba(245, 158, 11, 0.85)', 
+                            'rgba(16, 185, 129, 0.85)'  
                         ],
                         borderWidth: 1.5,
                         borderColor: '#ffffff',
                         weight: 2 
                     },
-                    // ANILLO INTERIOR: GENERACIÓN (Punta, Llano, Valle)
+                    // ANILLO INTERIOR: GENERACIÓN
                     {
                         data: [gp, gl, gv],
                         backgroundColor: [
-                            'rgba(239, 68, 68, 0.85)',  // Punta (Rojo)
-                            'rgba(245, 158, 11, 0.85)', // Llano (Ámbar)
-                            'rgba(16, 185, 129, 0.85)'  // Valle (Verde)
+                            'rgba(239, 68, 68, 0.85)',  
+                            'rgba(245, 158, 11, 0.85)', 
+                            'rgba(16, 185, 129, 0.85)'  
                         ],
                         borderWidth: 1.5,
                         borderColor: '#ffffff',
@@ -186,21 +195,14 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
                             label: function(context) {
                                 const valor = context.parsed;
                                 const datasetData = context.dataset.data;
-                                
-                                // Suma total de los 3 tramos de este anillo específico
                                 const totalDataset = datasetData.reduce((acc, val) => acc + (Number(val) || 0), 0);
-                                
-                                // Formatear valor en kWh
                                 const valorStr = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 }).format(valor) + ' kWh';
                                 
-                                // Calcular porcentaje con 2 decimales
                                 let porcentajeStr = '0,00%';
                                 if (totalDataset > 0) {
                                     const porcentaje = (valor / totalDataset) * 100;
                                     porcentajeStr = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(porcentaje) + '%';
                                 }
-                                
-                                // Devolver array para dos líneas: valor arriba, porcentaje abajo
                                 return [valorStr, porcentajeStr];
                             }
                         }
