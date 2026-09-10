@@ -119,7 +119,7 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
             type: 'doughnut',
             data: {
                 datasets: [
-                    // ANILLO EXTERIOR: CONSUMO (Punta, Llano, Valle) - Colores exactos
+                    // ANILLO EXTERIOR: CONSUMO
                     {
                         data: [cp, cl, cv],
                         backgroundColor: [
@@ -127,29 +127,29 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
                             'rgba(245, 158, 11, 0.85)', // Llano (Ámbar)
                             'rgba(16, 185, 129, 0.85)'  // Valle (Verde)
                         ],
-                        borderWidth: 2,
+                        borderWidth: 1.5,
                         borderColor: '#ffffff',
-                        weight: 1.5
+                        weight: 2 // Anillo exterior más dominante
                     },
-                    // ANILLO INTERIOR: GENERACIÓN (Punta, Llano, Valle) - Mismos colores exactos
+                    // ANILLO INTERIOR: GENERACIÓN
                     {
                         data: [gp, gl, gv],
                         backgroundColor: [
-                            'rgba(239, 68, 68, 0.85)',  // Punta (Rojo idéntico)
-                            'rgba(245, 158, 11, 0.85)', // Llano (Ámbar idéntico)
-                            'rgba(16, 185, 129, 0.85)'  // Valle (Verde idéntico)
+                            'rgba(239, 68, 68, 0.85)',  // Punta (Rojo)
+                            'rgba(245, 158, 11, 0.85)', // Llano (Ámbar)
+                            'rgba(16, 185, 129, 0.85)'  // Valle (Verde)
                         ],
-                        borderWidth: 2,
+                        borderWidth: 1.5,
                         borderColor: '#ffffff',
-                        weight: 1.2
+                        weight: 1.5 // Anillo interior proporcionado
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '38%', 
-                spacing: 3,    
+                cutout: '28%', // Reduce el hueco central para expandir los anillos hacia fuera
+                spacing: 2,    // Separación sutil entre porciones
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -159,7 +159,6 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
                         padding: 8,
                         cornerRadius: 6,
                         callbacks: {
-                            // Muestra exclusivamente el valor numérico formateado con kWh
                             label: function(context) {
                                 const valor = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 }).format(context.parsed);
                                 return `${valor} kWh`;
