@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient.js';
 
-let myChart = null;
+// Almacenaremos las instancias de los mini-gráficos para poder destruirlos al recargar
+let miniCharts = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     const btnLogout = document.getElementById('btn-logout');
@@ -62,8 +63,8 @@ async function cargarDatosGrafico() {
 
         if (error) throw error;
 
-        // Renderizar con los 6 arrays de datos (Consumo y Generación desglosados)
-        renderizarGrafico(
+        // Renderizar la cuadrícula de anillos concéntricos con los 6 arrays de datos
+        renderizarAnillosMensuales(
             data.mesesConsumoPunta, data.mesesConsumoValle, data.mesesConsumoLlano,
             data.mesesGeneracionPunta, data.mesesGeneracionValle, data.mesesGeneracionLlano
         );
@@ -73,110 +74,108 @@ async function cargarDatosGrafico() {
     }
 }
 
-function renderizarGrafico(c_punta, c_valle, c_llano, g_punta, g_valle, g_llano) {
-    const ctx = document.getElementById('chartConsumos').getContext('2d');
+const mesesNombres = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-    if (myChart) {
-        myChart.destroy();
-    }
+function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle, g_llano) {
+    const gridContainer = document.getElementById('meses-grid');
+    if (!gridContainer) return;
 
-    myChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-            datasets: [
-                // GRUPO 1: CONSUMO (Apilados en la barra de la izquierda de cada mes)
-                {
-                    label: 'Consumo Punta',
-                    data: c_punta,
-                    backgroundColor: 'rgba(239, 68, 68, 0.85)', // Rojo
-                    borderRadius: 2,
-                    stack: 'consumo',
-                },
-                {
-                    label: 'Consumo Llano',
-                    data: c_llano,
-                    backgroundColor: 'rgba(245, 158, 11, 0.85)', // Ámbar
-                    borderRadius: 2,
-                    stack: 'consumo',
-                },
-                {
-                    label: 'Consumo Valle',
-                    data: c_valle,
-                    backgroundColor: 'rgba(16, 185, 129, 0.85)', // Verde
-                    borderRadius: 2,
-                    stack: 'consumo',
-                },
-                // GRUPO 2: GENERACIÓN (Apilados en la barra de la derecha de cada mes)
-                {
-                    label: 'Generación Punta',
-                    data: g_punta,
-                    backgroundColor: 'rgba(59, 130, 246, 0.85)', // Azul fuerte
-                    borderRadius: 2,
-                    stack: 'generacion',
-                },
-                {
-                    label: 'Generación Llano',
-                    data: g_llano,
-                    backgroundColor: 'rgba(14, 165, 233, 0.85)', // Azul cielo
-                    borderRadius: 2,
-                    stack: 'generacion',
-                },
-                {
-                    label: 'Generación Valle',
-                    data: g_valle,
-                    backgroundColor: 'rgba(99, 102, 241, 0.85)', // Índigo
-                    borderRadius: 2,
-                    stack: 'generacion',
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        font: { family: 'Inter', weight: '500' },
-                        usePointStyle: true,
-                        pointStyle: 'circle'
+    // Destruir gráficos anteriores si ya existían para evitar fugas de memoria o solapamientos
+    miniCharts.forEach(chart => chart.destroy());
+    miniCharts = [];
+
+    // Limpiar contenedor HTML previo
+    gridContainer.innerHTML = '';
+
+    // Generar de Enero a Diciembre de izquierda a derecha
+    mesesNombres.forEach((nombreMes, i) => {
+        const card = document.createElement('div');
+        card.className = 'mes-card';
+
+        const title = document.createElement('div');
+        title.className = 'mes-titulo';
+        title.textContent = nombreMes;
+        card.appendChild(title);
+
+        const canvasWrapper = document.createElement('div');
+        canvasWrapper.className = 'chart-container-mini';
+
+        const canvas = document.createElement('canvas');
+        canvas.id = `chart-mes-${i}`;
+        canvasWrapper.appendChild(canvas);
+        card.appendChild(canvasWrapper);
+        gridContainer.appendChild(card);
+
+        // Obtener los valores particulares de este mes
+        const cp = c_punta[i] || 0;
+        const cv = c_valle[i] || 0;
+        const cl = c_llano[i] || 0;
+        const gp = g_punta[i] || 0;
+        const gv = g_valle[i] || 0;
+        const gl = g_llano[i] || 0;
+
+        const ctx = canvas.getContext('2d');
+        const chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                datasets: [
+                    // ANILLO EXTERIOR: CONSUMO (Punta, Llano, Valle)
+                    {
+                        data: [cp, cl, cv],
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.85)',  // Punta (Rojo)
+                            'rgba(245, 158, 11, 0.85)', // Llano (Ámbar)
+                            'rgba(16, 185, 129, 0.85)'  // Valle (Verde)
+                        ],
+                        borderWidth: 0,
+                        weight: 2
+                    },
+                    // ANILLO INTERIOR: GENERACIÓN (Punta, Llano, Valle)
+                    {
+                        data: [gp, gl, gv],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.85)', // Punta (Azul fuerte)
+                            'rgba(14, 165, 233, 0.85)', // Llano (Azul cielo)
+                            'rgba(99, 102, 241, 0.85)'  // Valle (Índigo)
+                        ],
+                        borderWidth: 0,
+                        weight: 1.2
                     }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                    titleFont: { family: 'Inter', size: 13 },
-                    bodyFont: { family: 'Inter', size: 12 },
-                    padding: 12,
-                    cornerRadius: 8,
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) label += ': ';
-                            if (context.parsed.y !== null) {
-                                label += new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 }).format(context.parsed.y) + ' kWh';
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '45%', // Espacio interior para lograr el diseño concéntrico
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleFont: { family: 'Inter', size: 12 },
+                        bodyFont: { family: 'Inter', size: 11 },
+                        padding: 8,
+                        cornerRadius: 6,
+                        callbacks: {
+                            label: function(context) {
+                                const datasetIndex = context.datasetIndex;
+                                const dataIndex = context.dataIndex;
+                                let tipoTarifa = '';
+                                
+                                if (dataIndex === 0) tipoTarifa = 'Punta';
+                                else if (dataIndex === 1) tipoTarifa = 'Llano';
+                                else if (dataIndex === 2) tipoTarifa = 'Valle';
+
+                                const grupo = datasetIndex === 0 ? 'Consumo' : 'Generación';
+                                const valor = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 }).format(context.parsed);
+                                
+                                return `${grupo} (${tipoTarifa}): ${valor} kWh`;
                             }
-                            return label;
                         }
                     }
                 }
-            },
-            scales: {
-                x: {
-                    stacked: true, // Agrupa y apila correctamente por propiedades "stack"
-                    grid: { display: false },
-                    ticks: { font: { family: 'Inter' } }
-                },
-                y: {
-                    stacked: true, // Apila verticalmente dentro de cada grupo
-                    beginAtZero: true,
-                    grid: { color: 'rgba(241, 245, 249, 1)' },
-                    ticks: { 
-                        font: { family: 'Inter' },
-                        callback: function(value) { return value + ' kWh'; }
-                    }
-                }
             }
-        }
+        });
+
+        miniCharts.push(chartInstance);
     });
 }
