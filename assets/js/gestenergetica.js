@@ -159,11 +159,15 @@ function renderizarGrafico(punta, valle, llano, generacion) {
                     ticks: { font: { family: 'Inter' } }
                 },
                 y: {
-                    beginAtZero: true,
+                    type: 'logarithmic', // Escala logarítmica activada
+                    min: 0.1,            // Valor mínimo seguro para evitar errores con ceros
                     grid: { color: 'rgba(241, 245, 249, 1)' },
                     ticks: { 
                         font: { family: 'Inter' },
-                        callback: function(value) { return value + ' kWh'; }
+                        callback: function(value) { 
+                            // Opcional: mostrar etiquetas formateadas en valores clave
+                            return Number(value).toLocaleString('es-ES') + ' kWh'; 
+                        }
                     }
                 }
             }
