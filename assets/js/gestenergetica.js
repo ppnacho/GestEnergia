@@ -119,7 +119,7 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
             type: 'doughnut',
             data: {
                 datasets: [
-                    // ANILLO EXTERIOR: CONSUMO
+                    // ANILLO EXTERIOR: CONSUMO (Punta, Llano, Valle)
                     {
                         data: [cp, cl, cv],
                         backgroundColor: [
@@ -129,9 +129,9 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
                         ],
                         borderWidth: 1.5,
                         borderColor: '#ffffff',
-                        weight: 2 // Anillo exterior más dominante
+                        weight: 2 
                     },
-                    // ANILLO INTERIOR: GENERACIÓN
+                    // ANILLO INTERIOR: GENERACIÓN (Punta, Llano, Valle)
                     {
                         data: [gp, gl, gv],
                         backgroundColor: [
@@ -141,27 +141,43 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
                         ],
                         borderWidth: 1.5,
                         borderColor: '#ffffff',
-                        weight: 1.5 // Anillo interior proporcionado
+                        weight: 1.5 
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '28%', // Reduce el hueco central para expandir los anillos hacia fuera
-                spacing: 2,    // Separación sutil entre porciones
+                cutout: '28%', 
+                spacing: 2,    
                 plugins: {
                     legend: { display: false },
                     tooltip: {
                         backgroundColor: 'rgba(15, 23, 42, 0.9)',
                         titleFont: { family: 'Inter', size: 12 },
                         bodyFont: { family: 'Inter', size: 12, weight: '600' },
-                        padding: 8,
+                        padding: 10,
                         cornerRadius: 6,
                         callbacks: {
                             label: function(context) {
-                                const valor = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 }).format(context.parsed);
-                                return `${valor} kWh`;
+                                const valor = context.parsed;
+                                const datasetData = context.dataset.data;
+                                
+                                // Suma total de los 3 tramos de este anillo específico
+                                const totalDataset = datasetData.reduce((acc, val) => acc + (Number(val) || 0), 0);
+                                
+                                // Formatear valor en kWh
+                                const valorStr = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 }).format(valor) + ' kWh';
+                                
+                                // Calcular porcentaje
+                                let porcentajeStr = '0%';
+                                if (totalDataset > 0) {
+                                    const porcentaje = (valor / totalDataset) * 100;
+                                    porcentajeStr = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 }).format(porcentaje) + '%';
+                                }
+                                
+                                // Devolver array para que salga en dos líneas (valor arriba, porcentaje abajo)
+                                return [valorStr, porcentajeStr];
                             }
                         }
                     }
