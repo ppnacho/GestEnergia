@@ -119,7 +119,7 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
             type: 'doughnut',
             data: {
                 datasets: [
-                    // ANILLO EXTERIOR: CONSUMO (Punta, Llano, Valle)
+                    // ANILLO EXTERIOR: CONSUMO (Punta, Llano, Valle) - Colores exactos
                     {
                         data: [cp, cl, cv],
                         backgroundColor: [
@@ -131,13 +131,13 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
                         borderColor: '#ffffff',
                         weight: 1.5
                     },
-                    // ANILLO INTERIOR: GENERACIÓN (Punta, Llano, Valle - Mismos colores)
+                    // ANILLO INTERIOR: GENERACIÓN (Punta, Llano, Valle) - Mismos colores exactos
                     {
                         data: [gp, gl, gv],
                         backgroundColor: [
-                            'rgba(239, 68, 68, 0.55)',  // Punta (Rojo suave)
-                            'rgba(245, 158, 11, 0.55)', // Llano (Ámbar suave)
-                            'rgba(16, 185, 129, 0.55)'  // Valle (Verde suave)
+                            'rgba(239, 68, 68, 0.85)',  // Punta (Rojo idéntico)
+                            'rgba(245, 158, 11, 0.85)', // Llano (Ámbar idéntico)
+                            'rgba(16, 185, 129, 0.85)'  // Valle (Verde idéntico)
                         ],
                         borderWidth: 2,
                         borderColor: '#ffffff',
@@ -148,30 +148,21 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '38%', // Deja un hueco interior perfecto
-                spacing: 3,    // Separa visualmente los bloques de las horas
+                cutout: '38%', 
+                spacing: 3,    
                 plugins: {
                     legend: { display: false },
                     tooltip: {
                         backgroundColor: 'rgba(15, 23, 42, 0.9)',
                         titleFont: { family: 'Inter', size: 12 },
-                        bodyFont: { family: 'Inter', size: 11 },
+                        bodyFont: { family: 'Inter', size: 12, weight: '600' },
                         padding: 8,
                         cornerRadius: 6,
                         callbacks: {
+                            // Muestra exclusivamente el valor numérico formateado con kWh
                             label: function(context) {
-                                const datasetIndex = context.datasetIndex;
-                                const dataIndex = context.dataIndex;
-                                let tipoTarifa = '';
-                                
-                                if (dataIndex === 0) tipoTarifa = 'Punta';
-                                else if (dataIndex === 1) tipoTarifa = 'Llano';
-                                else if (dataIndex === 2) tipoTarifa = 'Valle';
-
-                                const grupo = datasetIndex === 0 ? 'Consumo (Exterior)' : 'Generación (Interior)';
                                 const valor = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 }).format(context.parsed);
-                                
-                                return `${grupo} - ${tipoTarifa}: ${valor} kWh`;
+                                return `${valor} kWh`;
                             }
                         }
                     }
