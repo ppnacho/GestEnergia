@@ -3,13 +3,11 @@ import { supabase } from './supabaseClient.js';
 let myChart = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Configurar el botón de Cerrar Sesión
     const btnLogout = document.getElementById('btn-logout');
     if (btnLogout) {
         btnLogout.addEventListener('click', async () => {
             const { error } = await supabase.auth.signOut();
             if (!error) {
-                // Redirige a la página de login (ajusta la ruta si tu index/login está en otra carpeta)
                 window.location.href = '../index.html'; 
             } else {
                 console.error('Error al cerrar sesión:', error.message);
@@ -17,19 +15,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // 2. Obtener la sesión activa
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
     try {
-        // 3. Llamar a la Edge Function para inicializar los desplegables
         const { data, error } = await supabase.functions.invoke('panel-energia', {
             body: { action: 'init' }
         });
 
         if (error) throw error;
 
-        // Rellenar Suministros
         const selectSuministro = document.getElementById('select-suministro');
         data.suministros.forEach(sum => {
             const opt = document.createElement('option');
@@ -38,7 +33,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             selectSuministro.appendChild(opt);
         });
 
-        // Rellenar Años
         const selectAnio = document.getElementById('select-anio');
         data.anos.forEach(ano => {
             const opt = document.createElement('option');
@@ -51,7 +45,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Error al inicializar panel:", err);
     }
 
-    // Listeners de cambio en los filtros
     document.getElementById('select-suministro').addEventListener('change', cargarDatosGrafico);
     document.getElementById('select-anio').addEventListener('change', cargarDatosGrafico);
 });
@@ -69,15 +62,18 @@ async function cargarDatosGrafico() {
 
         if (error) throw error;
 
-        // Renderizar con las 4 series de datos
-        renderizarGrafico(data.mesesPunta, data.mesesValle, data.mesesLlano, data.mesesGeneracion);
+        // Renderizar con los 6 arrays de datos (Consumo y Generación desglosados)
+        renderizarGrafico(
+            data.mesesConsumoPunta, data.mesesConsumoValle, data.mesesConsumoLlano,
+            data.mesesGeneracionPunta, data.mesesGeneracionValle, data.mesesGeneracionLlano
+        );
 
     } catch (err) {
         console.error("Error al obtener datos del gráfico:", err);
     }
 }
 
-function renderizarGrafico(punta, valle, llano, generacion) {
+function renderizarGrafico(c_punta, c_valle, c_llano, g_punta, g_valle, g_llano) {
     const ctx = document.getElementById('chartConsumos').getContext('2d');
 
     if (myChart) {
@@ -89,37 +85,49 @@ function renderizarGrafico(punta, valle, llano, generacion) {
         data: {
             labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
             datasets: [
+                // GRUPO 1: CONSUMO (Apilados en la barra de la izquierda de cada mes)
                 {
-                    label: 'Punta',
-                    data: punta,
-                    backgroundColor: 'rgba(239, 68, 68, 0.85)', // Rojo / Naranja fuerte
-                    borderRadius: 4,
-                    barPercentage: 0.8,
-                    categoryPercentage: 0.85
+                    label: 'Consumo Punta',
+                    data: c_punta,
+                    backgroundColor: 'rgba(239, 68, 68, 0.85)', // Rojo
+                    borderRadius: 2,
+                    stack: 'consumo',
                 },
                 {
-                    label: 'Valle',
-                    data: valle,
-                    backgroundColor: 'rgba(16, 185, 129, 0.85)', // Verde esmeralda
-                    borderRadius: 4,
-                    barPercentage: 0.8,
-                    categoryPercentage: 0.85
+                    label: 'Consumo Llano',
+                    data: c_llano,
+                    backgroundColor: 'rgba(245, 158, 11, 0.85)', // Ámbar
+                    borderRadius: 2,
+                    stack: 'consumo',
                 },
                 {
-                    label: 'Llano',
-                    data: llano,
-                    backgroundColor: 'rgba(245, 158, 11, 0.85)', // Ámbar / Naranja suave
-                    borderRadius: 4,
-                    barPercentage: 0.8,
-                    categoryPercentage: 0.85
+                    label: 'Consumo Valle',
+                    data: c_valle,
+                    backgroundColor: 'rgba(16, 185, 129, 0.85)', // Verde
+                    borderRadius: 2,
+                    stack: 'consumo',
+                },
+                // GRUPO 2: GENERACIÓN (Apilados en la barra de la derecha de cada mes)
+                {
+                    label: 'Generación Punta',
+                    data: g_punta,
+                    backgroundColor: 'rgba(59, 130, 246, 0.85)', // Azul fuerte
+                    borderRadius: 2,
+                    stack: 'generacion',
                 },
                 {
-                    label: 'Generación',
-                    data: generacion,
+                    label: 'Generación Llano',
+                    data: g_llano,
                     backgroundColor: 'rgba(14, 165, 233, 0.85)', // Azul cielo
-                    borderRadius: 4,
-                    barPercentage: 0.8,
-                    categoryPercentage: 0.85
+                    borderRadius: 2,
+                    stack: 'generacion',
+                },
+                {
+                    label: 'Generación Valle',
+                    data: g_valle,
+                    backgroundColor: 'rgba(99, 102, 241, 0.85)', // Índigo
+                    borderRadius: 2,
+                    stack: 'generacion',
                 }
             ]
         },
@@ -155,10 +163,12 @@ function renderizarGrafico(punta, valle, llano, generacion) {
             },
             scales: {
                 x: {
+                    stacked: true, // Agrupa y apila correctamente por propiedades "stack"
                     grid: { display: false },
                     ticks: { font: { family: 'Inter' } }
                 },
                 y: {
+                    stacked: true, // Apila verticalmente dentro de cada grupo
                     beginAtZero: true,
                     grid: { color: 'rgba(241, 245, 249, 1)' },
                     ticks: { 
