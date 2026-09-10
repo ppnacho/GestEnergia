@@ -24,6 +24,7 @@
             </div>
             
             <div class="flex items-center space-x-4">
+                <span id="user-email" class="text-sm font-medium text-slate-600 hidden sm:inline"></span>
                 <button id="btn-logout" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-200">
                     Cerrar Sesión
                 </button>
@@ -34,7 +35,7 @@
     <!-- Contenido Principal -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        <!-- Tarjeta de Bienvenida con Botón CargaCSV alineado a la derecha -->
+        <!-- Tarjeta de Bienvenida con Botones de Carga en columna vertical a la derecha -->
         <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-emerald-900/10 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div>
                 <h2 class="text-2xl sm:text-3xl font-bold mb-2">¡Bienvenido al Panel de Control!</h2>
@@ -42,9 +43,17 @@
                     Sistema de gestión y monitorización energética avanzado. Aquí podrás supervisar tus suministros, consumos y estados en tiempo real.
                 </p>
             </div>
-            <div class="flex-shrink-0">
-                <a href="../load/loadcsv.html" class="bg-white text-emerald-700 hover:bg-emerald-50 px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-md inline-flex items-center space-x-2">
+            
+            <!-- Grupo de botones apilados verticalmente y alineados a la derecha -->
+            <div class="flex-shrink-0 flex flex-col items-stretch sm:items-end space-y-3 w-full sm:w-auto">
+                <a href="../load/loadcsv.html" class="bg-white text-emerald-700 hover:bg-emerald-50 px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-md inline-flex items-center justify-center text-center">
                     <span>CargaCSV</span>
+                </a>
+                <a href="cagatarifas.html" class="bg-white text-emerald-700 hover:bg-emerald-50 px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-md inline-flex items-center justify-center text-center">
+                    <span>CargaTarifas</span>
+                </a>
+                <a href="cargafacturas.html" class="bg-white text-emerald-700 hover:bg-emerald-50 px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-md inline-flex items-center justify-center text-center">
+                    <span>CargaFacturas</span>
                 </a>
             </div>
         </div>
