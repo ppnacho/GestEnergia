@@ -15,8 +15,8 @@
         .mes-card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 12px 8px;
+            border-radius: 16px;
+            padding: 16px 12px;
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -28,17 +28,17 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
         .mes-titulo {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
             color: #334155;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
         .chart-container-mini {
             position: relative;
-            width: 80px;
-            height: 80px;
+            width: 130px;
+            height: 130px;
         }
     </style>
 </head>
@@ -119,8 +119,8 @@
                 </div>
             </div>
 
-            <!-- Grid horizontal de 12 meses (Ene - Dic) -->
-            <div id="meses-grid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-12 gap-4 overflow-x-auto pb-2">
+            <!-- Grid de 2 filas (Ene-Jun arriba, Jul-Dic abajo en desktop) -->
+            <div id="meses-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                 <!-- Se inyectarán dinámicamente desde el JS -->
             </div>
         </div>
