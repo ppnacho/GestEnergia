@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
         // 3. Llamar a la Edge Function para inicializar los desplegables
-        const { data, error } = await supabase.functions.invoke('panel-datos', {
+        const { data, error } = await supabase.functions.invoke('panel-energia', {
             body: { action: 'init' }
         });
 
@@ -63,7 +63,7 @@ async function cargarDatosGrafico() {
     if (!suministro || !anio) return;
 
     try {
-        const { data, error } = await supabase.functions.invoke('panel-datos', {
+        const { data, error } = await supabase.functions.invoke('panel-energia', {
             body: { action: 'grafico', suministro, anio }
         });
 
