@@ -167,13 +167,13 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
                                 const totalDataset = datasetData.reduce((acc, val) => acc + (Number(val) || 0), 0);
                                 
                                 // Formatear valor en kWh
-                                const valorStr = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 }).format(valor) + ' kWh';
+                                const valorStr = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 }).format(valor) + ' kWh';
                                 
                                 // Calcular porcentaje
                                 let porcentajeStr = '0%';
                                 if (totalDataset > 0) {
                                     const porcentaje = (valor / totalDataset) * 100;
-                                    porcentajeStr = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 }).format(porcentaje) + '%';
+                                    porcentajeStr = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 }).format(porcentaje) + '%';
                                 }
                                 
                                 // Devolver array para que salga en dos líneas (valor arriba, porcentaje abajo)
