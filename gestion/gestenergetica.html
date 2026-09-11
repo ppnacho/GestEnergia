@@ -44,6 +44,20 @@
             background-color: #eff6ff; /* Azul claro tenue */
             border: 1px dashed #93c5fd; /* Opcional: un borde sutil para destacarlo */
         }
+        
+        /* Estilos para la leyenda con la imagen de tramos tarifarios */
+        .leyenda-tramos-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .img-tramos {
+            max-width: 64px;
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col">
@@ -90,7 +104,7 @@
                     <span>CargaFacturas</span>
                 </a>
             </div>
-        </div> <!-- Cierre correcto de la tarjeta de bienvenida -->
+        </div>
 
         <!-- Controles de Filtro en horizontal -->
         <div class="flex flex-wrap items-center gap-4 mb-8 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
@@ -115,11 +129,15 @@
                     <h3 class="text-lg font-bold text-slate-900">Evolución Anual</h3>
                     <p class="text-xs text-slate-500">Anillo exterior: Consumo | Anillo interior: Generación</p>
                 </div>
-                <!-- Leyenda rápida -->
-                <div class="flex items-center space-x-4 text-xs font-medium text-slate-600">
-                    <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-red-500 inline-block mr-1"></span> Punta</span>
-                    <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block mr-1"></span> Llano</span>
-                    <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block mr-1"></span> Valle</span>
+                
+                <!-- Leyenda rápida con imagen a la izquierda -->
+                <div class="leyenda-tramos-container">
+                    <img src="assets/img/tramostarifas.png" alt="Tramos horarios" class="img-tramos">
+                    <div class="flex items-center space-x-4 text-xs font-medium text-slate-600">
+                        <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-red-500 inline-block mr-1"></span> Punta</span>
+                        <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block mr-1"></span> Llano</span>
+                        <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block mr-1"></span> Valle</span>
+                    </div>
                 </div>
             </div>
 
