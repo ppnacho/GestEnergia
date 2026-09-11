@@ -149,7 +149,7 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
 
         infoDiv.innerHTML = `
             <div style="color: #000000;">Consumo: ${costeFormatted}</div>
-            <div style="color: #000000;">Gen.: ${generacionFormatted}</div>
+            <div style="color: #000000;">Generacion: ${generacionFormatted}</div>
         `;
         card.appendChild(infoDiv);
 
