@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient.js';
 const fileInputXlsx = document.getElementById('xlsx-file-input');
 const btnUploadXlsx = document.getElementById('btn-upload-xlsx');
 const statusDiv = document.getElementById('upload-status');
+const textoUltimoPeriodo = document.getElementById('texto-ultimo-periodo');
 
 async function verificarSesion() {
     try {
@@ -32,6 +33,47 @@ function mostrarEstado(mensaje, tipo = 'info') {
     }
     
     statusDiv.textContent = mensaje;
+}
+
+// Consultar los últimos periodos llamando a la Edge Function
+async function consultarUltimoPeriodo() {
+    if (!textoUltimoPeriodo) return;
+
+    try {
+        const { data, error } = await supabase.functions.invoke('load-last-register');
+
+        if (error) {
+            let serverErrorMsg = error.message;
+            try {
+                if (error.context && typeof error.context.json === 'function') {
+                    const errorBody = await error.context.json();
+                    if (errorBody && errorBody.error) {
+                        serverErrorMsg = errorBody.error;
+                    }
+                }
+            } catch (e) {
+                // Silenciar error secundario
+            }
+            throw new Error(serverErrorMsg);
+        }
+
+        if (data && data.ultimosRegistros && Array.isArray(data.ultimosRegistros) && data.ultimosRegistros.length > 0) {
+            let htmlList = '<ul style="list-style-type: none; padding-left: 0; margin: 0;">';
+            
+            data.ultimosRegistros.forEach(item => {
+                const fechaTexto = item.ultimaFecha ? item.ultimaFecha : 'Sin registros previos';
+                htmlList += `<li style="margin-bottom: 4px;"><strong>${item.alias}:</strong> ${fechaTexto}</li>`;
+            });
+            
+            htmlList += '</ul>';
+            textoUltimoPeriodo.innerHTML = htmlList;
+        } else {
+            textoUltimoPeriodo.textContent = "No hay suministros asociados o registros previos.";
+        }
+    } catch (err) {
+        console.error("Error al consultar el último periodo:", err.message);
+        textoUltimoPeriodo.textContent = "Error al consultar los últimos registros.";
+    }
 }
 
 async function procesarExcel() {
@@ -159,6 +201,9 @@ async function procesarExcel() {
             mostrarEstado(`¡Carga de Excel completada con éxito! Se han procesado ${registros.length} registros correctamente.`, "success");
             fileInputXlsx.value = "";
 
+            // Refrescar los últimos periodos en pantalla
+            consultarUltimoPeriodo();
+
         } catch (err) {
             console.error("Error detallado durante el proceso del Excel:", err);
             mostrarEstado("Error al cargar el fichero Excel: " + err.message, "error");
@@ -180,5 +225,9 @@ if (btnUploadXlsx) {
     btnUploadXlsx.addEventListener('click', procesarExcel);
 }
 
-// Validación de sesión inicial al cargar la página
-verificarSesion();
+// Validación de sesión inicial y carga de último periodo al iniciar la página
+verificarSesion().then((valida) => {
+    if (valida) {
+        consultarUltimoPeriodo();
+    }
+});
