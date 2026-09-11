@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GestEnergética - Carga CSV</title>
+    <title>GestEnergética - Carga de Ficheros</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS para leer ficheros Excel (.xls / .xlsx) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
     </style>
@@ -36,15 +38,15 @@
         
         <!-- Tarjeta Principal de Carga -->
         <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm mb-8">
-            <h2 class="text-2xl font-bold text-slate-900 mb-2">Carga de Ficheros CSV</h2>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Carga de Ficheros de Consumo</h2>
             <p class="text-slate-500 text-sm mb-6">
-                Selecciona un archivo CSV con los registros de consumos y generación para procesarlo y cargarlo automáticamente en el sistema.
+                Selecciona un archivo CSV (autoconsumo) o un archivo Excel (.xls / .xlsx) de suministros sin autoconsumo para procesarlo y cargarlo automáticamente en el sistema.
             </p>
 
             <!-- Formulario de Selección y Envío -->
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                 <div class="flex-grow">
-                    <input type="file" id="csv-file-input" accept=".csv" class="block w-full text-sm text-slate-500
+                    <input type="file" id="csv-file-input" accept=".csv, .xls, .xlsx" class="block w-full text-sm text-slate-500
                         file:mr-4 file:py-2.5 file:px-4
                         file:rounded-xl file:border-0
                         file:text-sm file:font-semibold
