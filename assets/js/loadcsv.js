@@ -35,7 +35,7 @@ function mostrarEstado(mensaje, tipo = 'info') {
     statusDiv.textContent = mensaje;
 }
 
-// Obtener el último periodo llamando a una Edge Function (sin consultas directas a tablas)
+// Obtener los últimos periodos de cada suministro llamando a la Edge Function
 async function consultarUltimoPeriodo() {
     if (!textoUltimoPeriodo) return;
 
@@ -43,7 +43,6 @@ async function consultarUltimoPeriodo() {
         const { data, error } = await supabase.functions.invoke('load-last-register');
 
         if (error) {
-            // Intentar extraer el mensaje real devuelto por la Edge Function
             let serverErrorMsg = error.message;
             try {
                 if (error.context && typeof error.context.json === 'function') {
@@ -53,19 +52,28 @@ async function consultarUltimoPeriodo() {
                     }
                 }
             } catch (e) {
-                // Si no se puede parsear, nos quedamos con el mensaje por defecto
+                // Silenciar error de parseo secundario
             }
             throw new Error(serverErrorMsg);
         }
 
-        if (data && data.periodo) {
-            textoUltimoPeriodo.textContent = data.periodo;
+        // data.ultimosRegistros contiene un objeto del tipo: { "ES0021...": "2026-09-10 14:00:00", ... }
+        if (data && data.ultimosRegistros && Object.keys(data.ultimosRegistros).length > 0) {
+            let htmlList = '<ul style="list-style-type: none; padding-left: 0; margin: 0;">';
+            
+            for (const [suministro, fecha] of Object.entries(data.ultimosRegistros)) {
+                const fechaTexto = fecha ? fecha : 'Sin registros previos';
+                htmlList += `<li style="margin-bottom: 4px;"><strong>${suministro}:</strong> ${fechaTexto}</li>`;
+            }
+            
+            htmlList += '</ul>';
+            textoUltimoPeriodo.innerHTML = htmlList;
         } else {
-            textoUltimoPeriodo.textContent = "No hay registros previos (tabla vacía)";
+            textoUltimoPeriodo.textContent = "No hay suministros asociados o registros previos.";
         }
     } catch (err) {
         console.error("Error al consultar el último periodo:", err.message);
-        textoUltimoPeriodo.textContent = "Error al consultar";
+        textoUltimoPeriodo.textContent = "Error al consultar los últimos registros.";
     }
 }
 
