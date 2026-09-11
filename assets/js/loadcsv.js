@@ -76,16 +76,19 @@ async function consultarUltimoPeriodo() {
     }
 }
 
-// Función auxiliar para parsear filas de texto CSV tradicional
+// Parseador robusto para CSV tradicional
 function parsearLineasCSV(texto) {
     const lineas = texto.split(/\r\n|\n/);
     const registros = [];
 
-    for (let i = 1; i < lineas.length; i++) {
+    for (let i = 0; i < lineas.length; i++) {
         const linea = lineas[i].trim();
         if (!linea) continue;
 
         const columnas = linea.split(';');
+        // Omitir cabecera si la primera línea contiene letras en vez de un CUPS (ej. empieza por "CUPS")
+        if (i === 0 && columnas[0].toUpperCase().includes('CUPS')) continue;
+
         if (columnas.length >= 6) {
             const fechaRaw = columnas[1].trim();
             const fechaFormateada = fechaRaw.replace(/\//g, '-');
@@ -93,7 +96,7 @@ function parsearLineasCSV(texto) {
             registros.push({
                 suministro: columnas[0].trim(),
                 periodo: fechaFormateada,
-                estacion: columnas[2].trim(),
+                estacion: parseInt(columnas[2].trim()) || 0,
                 periodo_tarifa: columnas[3].trim(),
                 consumo: parseInt(columnas[4].trim()) || 0,
                 generacion: parseInt(columnas[5].trim()) || 0
@@ -103,65 +106,95 @@ function parsearLineasCSV(texto) {
     return registros;
 }
 
-// Función para parsear ficheros Excel (.xls / .xlsx) con cabeceras informativas en las 2 primeras filas
+// Parseador robusto para Excel (.xls / .xlsx) con filas informativas iniciales
 async function parsearExcel(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
+        
         reader.onload = function (e) {
             try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
+                const arrayBuffer = e.target.result;
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
 
                 // Convertir la hoja a matriz de filas (array de arrays)
                 const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                if (rows.length < 4) {
-                    throw new Error("El formato del fichero Excel no contiene suficientes filas.");
+                if (rows.length < 3) {
+                    throw new Error("El fichero Excel no contiene suficientes filas.");
                 }
 
-                // Fila 2 (índice 2) contiene la cabecera real según la estructura analizada:
-                // ["CUPS", "FECHA-HORA", "INV / VER", "PERIODO TARIFARIO", "CONSUMO Wh", "GENERACION Wh"]
-                const headerRowIndex = 2;
-                const headers = rows[headerRowIndex];
+                // Buscar de forma dinámica en qué fila se encuentran las cabeceras reales ("CUPS")
+                // por si el archivo tiene 1, 2 o más filas informativas arriba.
+                let headerRowIndex = -1;
+                let headers = [];
 
-                const cupsIdx = headers.indexOf('CUPS');
-                const fechaIdx = headers.indexOf('FECHA-HORA');
-                const invVerIdx = headers.indexOf('INV / VER');
-                const periodoIdx = headers.indexOf('PERIODO TARIFARIO');
-                const consumoIdx = headers.indexOf('CONSUMO Wh');
-                const genIdx = headers.indexOf('GENERACION Wh');
+                for (let r = 0; r < Math.min(rows.length, 5); r++) {
+                    const row = rows[r];
+                    if (row && row.some(cell => String(cell).trim().toUpperCase() === 'CUPS')) {
+                        headerRowIndex = r;
+                        headers = row.map(h => String(h || '').trim().toUpperCase());
+                        break;
+                    }
+                }
+
+                if (headerRowIndex === -1) {
+                    throw new Error("No se ha encontrado la columna 'CUPS' en las primeras filas del Excel.");
+                }
+
+                // Identificar los índices de las columnas clave
+                const cupsIdx = headers.findIndex(h => h.includes('CUPS'));
+                const fechaIdx = headers.findIndex(h => h.includes('FECHA'));
+                const invVerIdx = headers.findIndex(h => h.includes('INV') || h.includes('VER'));
+                const periodoIdx = headers.findIndex(h => h.includes('PERIODO'));
+                const consumoIdx = headers.findIndex(h => h.includes('CONSUMO'));
+                const genIdx = headers.findIndex(h => h.includes('GENERACION') || h.includes('GENERACIN'));
 
                 if (cupsIdx === -1 || fechaIdx === -1 || consumoIdx === -1) {
-                    throw new Error("No se han encontrado las columnas obligatorias en la cabecera (Fila 3 del Excel).");
+                    throw new Error("No se han podido mapear las columnas obligatorias del Excel.");
                 }
 
                 const registros = [];
 
+                // Recorrer los datos a partir de la fila siguiente a la cabecera
                 for (let i = headerRowIndex + 1; i < rows.length; i++) {
                     const row = rows[i];
-                    if (!row || row.length === 0 || !row[cupsIdx]) continue;
+                    if (!row || row.length === 0) continue;
+
+                    const cupsVal = row[cupsIdx];
+                    if (!cupsVal || String(cupsVal).trim() === '') continue; // Omitir filas vacías
 
                     let fechaRaw = row[fechaIdx];
-                    
-                    // Manejo por si Excel devuelve el número de serie de fecha o un string
                     if (typeof fechaRaw === 'number') {
-                        fechaRaw = XLSX.SSF.format('yyyy/mm/dd hh:mm', fechaRaw);
+                        // Si Excel devuelve fecha numérica de serie
+                        const fechaObj = XLSX.SSF.parse_date_code(fechaRaw);
+                        if (fechaObj) {
+                            const anio = fechaObj.y;
+                            const mes = String(fechaObj.m).padStart(2, '0');
+                            const dia = String(fechaObj.d).padStart(2, '0');
+                            const hora = String(fechaObj.H || 0).padStart(2, '0');
+                            const min = String(fechaObj.M || 0).padStart(2, '0');
+                            fechaRaw = `${anio}/${mes}/${dia} ${hora}:${min}`;
+                        }
                     } else {
                         fechaRaw = String(fechaRaw || '').trim();
                     }
-                    
+
                     const fechaFormateada = fechaRaw.replace(/\//g, '-');
 
                     registros.push({
-                        suministro: String(row[cupsIdx] || '').trim(),
+                        suministro: String(cupsVal).trim(),
                         periodo: fechaFormateada,
-                        estacion: String(row[invVerIdx] !== undefined ? row[invVerIdx] : '0').trim(),
-                        periodo_tarifa: String(row[periodoIdx] || 'Valle').trim(),
+                        estacion: invVerIdx !== -1 ? (parseInt(row[invVerIdx]) || 0) : 0,
+                        periodo_tarifa: periodoIdx !== -1 ? String(row[periodoIdx] || 'Valle').trim() : 'Valle',
                         consumo: parseInt(row[consumoIdx]) || 0,
-                        generacion: parseInt(row[genIdx]) || 0
+                        generacion: genIdx !== -1 ? (parseInt(row[genIdx]) || 0) : 0
                     });
+                }
+
+                if (registros.length === 0) {
+                    throw new Error("No se han encontrado registros de datos válidos debajo de la cabecera.");
                 }
 
                 resolve(registros);
@@ -169,7 +202,10 @@ async function parsearExcel(file) {
                 reject(err);
             }
         };
+
         reader.onerror = (error) => reject(error);
+        
+        // IMPORTANTE: Leer como ArrayBuffer para ficheros binarios de Excel (.xls / .xlsx)
         reader.readAsArrayBuffer(file);
     });
 }
@@ -213,7 +249,7 @@ async function procesarFichero() {
 
         mostrarEstado(`Procesados ${registros.length} registros. Enviando a la Edge Function...`, "info");
 
-        // Llamada a la Edge Function existente (carga-consumos) sin modificarla
+        // Llamada a la Edge Function existente (carga-consumos)
         const { data, error } = await supabase.functions.invoke('carga-consumos', {
             body: { registros }
         });
@@ -236,7 +272,6 @@ async function procesarFichero() {
         mostrarEstado(`¡Carga completada con éxito! Se han procesado ${registros.length} registros correctamente.`, "success");
         fileInput.value = "";
 
-        // Actualizar en pantalla el nuevo último periodo tras la subida exitosa
         consultarUltimoPeriodo();
 
     } catch (err) {
