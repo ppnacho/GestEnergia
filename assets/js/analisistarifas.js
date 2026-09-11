@@ -7,16 +7,28 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 let chartInstance = null
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    if (sessionError || !session) {
-        window.location.href = '../index.html'
-        return
+    // Cambiamos a getUser() o usamos un listener de estado para evitar falsos positivos de redirección
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+        // Damos un pequeño margen por si la sesión de Supabase local tarda unos milisegundos en estar lista
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+            window.location.href = '../index.html'
+            return
+        }
     }
 
+    // Botón de Cerrar Sesión
     document.getElementById('btn-logout').addEventListener('click', async () => {
         await supabase.auth.signOut()
         window.location.href = '../index.html'
     })
+
+    // Continuar con la carga de filtros
+    await cargarFiltrosIniciales()
+    // ... resto de listeners
+})
 
     // Cargar filtros iniciales a través de la Edge Function
     await cargarFiltrosIniciales()
