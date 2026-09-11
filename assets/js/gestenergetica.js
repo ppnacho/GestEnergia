@@ -27,10 +27,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (error) throw error;
 
         const selectSuministro = document.getElementById('select-suministro');
+        selectSuministro.innerHTML = ''; // Limpiar opciones previas si las hubiera
+
+        // Se adapta para soportar tanto si la API devuelve objetos con { cups, alias } como si devolviese strings antiguos
         data.suministros.forEach(sum => {
             const opt = document.createElement('option');
-            opt.value = sum;
-            opt.textContent = sum;
+            
+            if (typeof sum === 'object' && sum !== null) {
+                opt.value = sum.cups;
+                opt.textContent = sum.alias ? `${sum.alias} (${sum.cups})` : sum.cups;
+            } else {
+                // Compatibilidad por si algún suministro viniera directamente como string (CUPS)
+                opt.value = sum;
+                opt.textContent = sum;
+            }
+
             selectSuministro.appendChild(opt);
         });
 
@@ -41,6 +52,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             opt.textContent = ano;
             selectAnio.appendChild(opt);
         });
+
+        // Si se cargaron suministros y años por defecto, lanzamos la primera carga del gráfico automáticamente
+        if (selectSuministro.value && selectAnio.value) {
+            cargarDatosGrafico();
+        }
 
     } catch (err) {
         console.error("Error al inicializar panel:", err);
@@ -89,7 +105,7 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
     // Obtener año actual y mes actual (0 = Enero, 8 = Septiembre)
     const fechaActual = new Date();
     const anioActual = fechaActual.getFullYear();
-    const mesActualIndex = fechaActual.getMonth(); // 8 para septiembre en 2026
+    const mesActualIndex = fechaActual.getMonth(); 
     
     // Obtener el año que el usuario tiene seleccionado en el desplegable
     const selectAnio = document.getElementById('select-anio');
