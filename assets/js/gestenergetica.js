@@ -29,13 +29,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const selectSuministro = document.getElementById('select-suministro');
         selectSuministro.innerHTML = ''; // Limpiar opciones previas si las hubiera
 
-        // Se adapta para soportar tanto si la API devuelve objetos con { cups, alias } como si devolviese strings antiguos
+       // Se adapta para mostrar únicamente el alias (y el CUPS como respaldo por si faltase)
         data.suministros.forEach(sum => {
             const opt = document.createElement('option');
             
             if (typeof sum === 'object' && sum !== null) {
                 opt.value = sum.cups;
-                opt.textContent = sum.alias ? `${sum.alias} (${sum.cups})` : sum.cups;
+                opt.textContent = sum.alias || sum.cups;
             } else {
                 // Compatibilidad por si algún suministro viniera directamente como string (CUPS)
                 opt.value = sum;
