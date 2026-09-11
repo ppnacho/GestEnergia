@@ -58,13 +58,14 @@ async function consultarUltimoPeriodo() {
         }
 
         // data.ultimosRegistros contiene un objeto del tipo: { "ES0021...": "2026-09-10 14:00:00", ... }
-        if (data && data.ultimosRegistros && Object.keys(data.ultimosRegistros).length > 0) {
+        if (data && data.ultimosRegistros && Array.isArray(data.ultimosRegistros) && data.ultimosRegistros.length > 0) {
             let htmlList = '<ul style="list-style-type: none; padding-left: 0; margin: 0;">';
             
-            for (const [suministro, fecha] of Object.entries(data.ultimosRegistros)) {
-                const fechaTexto = fecha ? fecha : 'Sin registros previos';
-                htmlList += `<li style="margin-bottom: 4px;"><strong>${suministro}:</strong> ${fechaTexto}</li>`;
-            }
+            data.ultimosRegistros.forEach(item => {
+                const fechaTexto = item.ultimaFecha ? item.ultimaFecha : 'Sin registros previos';
+                // Mostramos el alias amigable y su última fecha
+                htmlList += `<li style="margin-bottom: 4px;"><strong>${item.alias}:</strong> ${fechaTexto}</li>`;
+            });
             
             htmlList += '</ul>';
             textoUltimoPeriodo.innerHTML = htmlList;
