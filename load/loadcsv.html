@@ -36,17 +36,17 @@
     <!-- Contenido Principal -->
     <main class="flex-grow max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
         
-        <!-- Tarjeta Principal de Carga -->
-        <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm mb-8">
-            <h2 class="text-2xl font-bold text-slate-900 mb-2">Carga de Ficheros de Consumo</h2>
+        <!-- Tarjeta 1: Carga de Ficheros CSV (Tu sistema actual intacto) -->
+        <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm mb-6">
+            <h2 class="text-xl font-bold text-slate-900 mb-2">Carga de Ficheros CSV (Autoconsumo)</h2>
             <p class="text-slate-500 text-sm mb-6">
-                Selecciona un archivo CSV (autoconsumo) o un archivo Excel (.xls / .xlsx) de suministros sin autoconsumo para procesarlo y cargarlo automáticamente en el sistema.
+                Selecciona tu archivo CSV tradicional para procesarlo y cargarlo automáticamente en el sistema.
             </p>
 
-            <!-- Formulario de Selección y Envío -->
+            <!-- Formulario CSV -->
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                 <div class="flex-grow">
-                    <input type="file" id="csv-file-input" accept=".csv, .xls, .xlsx" class="block w-full text-sm text-slate-500
+                    <input type="file" id="csv-file-input" accept=".csv" class="block w-full text-sm text-slate-500
                         file:mr-4 file:py-2.5 file:px-4
                         file:rounded-xl file:border-0
                         file:text-sm file:font-semibold
@@ -56,20 +56,46 @@
                 </div>
                 <div>
                     <button id="btn-upload-csv" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-semibold text-sm transition-colors shadow-md shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed">
-                        Procesar y Cargar
+                        Procesar CSV
                     </button>
                 </div>
             </div>
-
-            <!-- Información del último periodo registrado -->
-            <div id="info-ultimo-periodo" class="mt-4 p-3 bg-blue-50/50 border border-blue-100 rounded-xl text-xs text-blue-900 flex items-center space-x-2">
-                <span class="font-semibold">📅 Último periodo en BD:</span>
-                <span id="texto-ultimo-periodo" class="text-blue-700">Comprobando...</span>
-            </div>
-
-            <!-- Área de Estado / Mensajes -->
-            <div id="upload-status" class="mt-6 hidden p-4 rounded-xl text-sm"></div>
         </div>
+
+        <!-- Tarjeta 2: Carga de Ficheros Excel (Nuevo sistema independiente para .xls / .xlsx) -->
+        <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm mb-8">
+            <h2 class="text-xl font-bold text-slate-900 mb-2">Carga de Ficheros Excel (.xls / .xlsx)</h2>
+            <p class="text-slate-500 text-sm mb-6">
+                Selecciona un archivo Excel de suministros sin autoconsumo para procesarlo y cargarlo automáticamente.
+            </p>
+
+            <!-- Formulario Excel -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                <div class="flex-grow">
+                    <input type="file" id="xlsx-file-input" accept=".xls, .xlsx" class="block w-full text-sm text-slate-500
+                        file:mr-4 file:py-2.5 file:px-4
+                        file:rounded-xl file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-blue-50 file:text-blue-700
+                        hover:file:bg-blue-100 cursor-pointer border border-slate-200 rounded-xl p-1.5 bg-slate-50"
+                    >
+                </div>
+                <div>
+                    <button id="btn-upload-xlsx" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold text-sm transition-colors shadow-md shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Procesar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del último periodo registrado (Gestionado por loadcsv.js) -->
+        <div id="info-ultimo-periodo" class="mt-4 p-3 bg-blue-50/50 border border-blue-100 rounded-xl text-xs text-blue-900 flex items-center space-x-2">
+            <span class="font-semibold">📅 Último periodo en BD:</span>
+            <span id="texto-ultimo-periodo" class="text-blue-700">Comprobando...</span>
+        </div>
+
+        <!-- Área de Estado / Mensajes Compartida -->
+        <div id="upload-status" class="mt-6 hidden p-4 rounded-xl text-sm"></div>
 
     </main>
 
@@ -80,7 +106,8 @@
         </div>
     </footer>
 
-    <!-- Script modularizado ubicado en assets/js/loadcsv.js -->
+    <!-- Scripts modularizados independientes -->
     <script type="module" src="../assets/js/loadcsv.js"></script>
+    <script type="module" src="../assets/js/loadxlsx.js"></script>
 </body>
 </html>
