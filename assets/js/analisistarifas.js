@@ -3,11 +3,10 @@ import { supabase } from './supabaseClient.js';
 let chartInstance = null
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Cambiamos a getUser() o usamos un listener de estado para evitar falsos positivos de redirección
+    // Validación de sesión
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
-        // Damos un pequeño margen por si la sesión de Supabase local tarda unos milisegundos en estar lista
         const { data: { session } } = await supabase.auth.getSession()
         if (!session) {
             window.location.href = '../index.html'
@@ -21,14 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = '../index.html'
     })
 
-    // Continuar con la carga de filtros
-    await cargarFiltrosIniciales()
-    // ... resto de listeners
-})
-
-    // Cargar filtros iniciales a través de la Edge Function
-    await cargarFiltrosIniciales()
-
+    // Listeners de los selectores y pestañas
     document.getElementById('select-suministro').addEventListener('change', ejecutarAnalisis)
     document.getElementById('select-anio').addEventListener('change', ejecutarAnalisis)
 
@@ -44,6 +36,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             ejecutarAnalisis();
         });
     });
+
+    // Cargar filtros iniciales una vez configurado todo el DOM y los eventos
+    await cargarFiltrosIniciales()
 })
 
 // Solicita los suministros y años iniciales a la Edge Function (Acción 'init')
@@ -73,6 +68,7 @@ async function cargarFiltrosIniciales() {
         })
 
         const selectAnio = document.getElementById('select-anio')
+        selectAnio.innerHTML = '<option value="">Todos los años</option>' // Opcional por si quieres limpiar
         anios.forEach(anio => {
             const opt = document.createElement('option')
             opt.value = anio
