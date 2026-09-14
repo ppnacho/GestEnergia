@@ -168,10 +168,10 @@ function renderizarResultados(data) {
     // Rellenar Card de Resumen de Energía
     if (resumen_energia) {
         document.getElementById('resumen-meses-badge').textContent = `${resumen_energia.factor_meses} meses`;
-        document.getElementById('kwh-punta').textContent = `${Math.round(resumen_energia.punta).toLocaleString('es-ES')} kWh`;
-        document.getElementById('kwh-llano').textContent = `${Math.round(resumen_energia.llano).toLocaleString('es-ES')} kWh`;
-        document.getElementById('kwh-valle').textContent = `${Math.round(resumen_energia.valle).toLocaleString('es-ES')} kWh`;
-        document.getElementById('kwh-excedentes').textContent = `${Math.round(resumen_energia.excedentes || 0).toLocaleString('es-ES')} kWh`;
+        document.getElementById('kwh-punta').textContent = `${resumen_energia.punta.toLocaleString('es-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kWh`;
+        document.getElementById('kwh-llano').textContent = `${resumen_energia.llano.toLocaleString('es-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kWh`;
+        document.getElementById('kwh-valle').textContent = `${resumen_energia.valle.toLocaleString('es-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kWh`;
+        document.getElementById('kwh-excedentes').textContent = `${(resumen_energia.excedentes || 0).toLocaleString('es-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kWh`;
     }
 
     document.getElementById('renovacion-nombre').textContent = tarifa_renovacion.nombre
