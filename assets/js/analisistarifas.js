@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     selectSuministro.addEventListener('change', async () => {
         const suministroVal = selectSuministro.value;
         
-        // Reseteamos el select de años
         selectAnio.innerHTML = '<option value="" disabled selected>Cargando años...</option>';
         selectAnio.disabled = true;
 
@@ -39,7 +38,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
-            // Consultamos los años específicos para este suministro
             const { data, error } = await supabase.functions.invoke('analisis-tarifas', {
                 body: { action: 'anios', suministro: suministroVal }
             })
@@ -48,7 +46,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const anios = data.anios || []
 
-            // Poblamos el desplegable con los años devueltos
             selectAnio.innerHTML = '<option value="" disabled selected>Selecciona un año...</option><option value="todos">Todos los años</option>';
             anios.forEach(anio => {
                 const opt = document.createElement('option');
@@ -65,12 +62,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             selectAnio.innerHTML = '<option value="" disabled selected>Error al cargar</option>';
         }
 
-        // Ocultamos resultados hasta que el usuario elija también un año
         document.getElementById('estado-vacio').classList.remove('hidden')
         document.getElementById('contenedor-resultados').classList.add('hidden')
     })
 
-    // PASO 2: Al cambiar de año, ahora sí se ejecutan los cálculos completos
     selectAnio.addEventListener('change', ejecutarAnalisis)
 
     document.querySelectorAll('.tab-periodo').forEach(btn => {
@@ -88,11 +83,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // Carga inicial de suministros
     await cargarSuministrosIniciales()
 })
 
-// Solo trae la lista de suministros del usuario
 async function cargarSuministrosIniciales() {
     try {
         const { data, error } = await supabase.functions.invoke('analisis-tarifas', {
@@ -126,7 +119,6 @@ async function cargarSuministrosIniciales() {
     }
 }
 
-// PASO 3: Ejecuta los cálculos de tarifas mandando suministro, año y periodo
 async function ejecutarAnalisis() {
     const suministro = document.getElementById('select-suministro').value
     const selectAnio = document.getElementById('select-anio')
@@ -168,11 +160,19 @@ async function ejecutarAnalisis() {
 }
 
 function renderizarResultados(data) {
-    const { tarifa_renovacion, mercado, ganadora } = data
+    const { tarifa_renovacion, mercado, ganadora, resumen_energia } = data
 
-    // >>> PÉGALO AQUÍ <<<
     // Filtramos el mercado para excluir la tarifa 'Renovacion' y evitar duplicados
     const mercadoFiltrado = mercado.filter(t => t.nombre?.trim().toLowerCase() !== 'renovacion')
+
+    // Rellenar Card de Resumen de Energía
+    if (resumen_energia) {
+        document.getElementById('resumen-meses-badge').textContent = `${resumen_energia.factor_meses} meses`;
+        document.getElementById('kwh-punta').textContent = `${Math.round(resumen_energia.punta).toLocaleString('es-ES')} kWh`;
+        document.getElementById('kwh-llano').textContent = `${Math.round(resumen_energia.llano).toLocaleString('es-ES')} kWh`;
+        document.getElementById('kwh-valle').textContent = `${Math.round(resumen_energia.valle).toLocaleString('es-ES')} kWh`;
+        document.getElementById('kwh-excedentes').textContent = `${Math.round(resumen_energia.excedentes || 0).toLocaleString('es-ES')} kWh`;
+    }
 
     document.getElementById('renovacion-nombre').textContent = tarifa_renovacion.nombre
     document.getElementById('renovacion-coste').textContent = `${tarifa_renovacion.coste_total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`
@@ -200,7 +200,6 @@ function renderizarResultados(data) {
         document.getElementById('ganadora-ahorro-pct').textContent = '(0,0%)'
     }
 
-    // Y recuerda pasar 'mercadoFiltrado' en lugar de 'mercado' aquí abajo:
     renderizarGrafico(tarifa_renovacion, mercadoFiltrado)
     renderizarTablaRanking(tarifa_renovacion, mercadoFiltrado)
 }
@@ -215,6 +214,8 @@ function renderizarGrafico(renovacion, mercado) {
     const labels = [renovacion.nombre, ...mercado.map(t => t.nombre)]
     const costesFijos = [renovacion.coste_fijo, ...mercado.map(t => t.coste_fijo)]
     const costesEnergia = [renovacion.coste_energia, ...mercado.map(t => t.coste_energia)]
+    // Asumiendo que cada tarifa trae un campo `coste_excedentes` (positivo, que se pintará separado o restando)
+    const costesExcedentes = [renovacion.coste_excedentes || 0, ...mercado.map(t => t.coste_excedentes || 0)]
 
     if (chartInstance) {
         chartInstance.destroy()
@@ -229,13 +230,25 @@ function renderizarGrafico(renovacion, mercado) {
                     label: 'Coste Fijo (Potencia)',
                     data: costesFijos,
                     backgroundColor: '#cbd5e1',
-                    borderRadius: 4
+                    borderRadius: 4,
+                    stack: 'stack0'
                 },
                 {
                     label: 'Coste Variable (Energía)',
                     data: costesEnergia,
                     backgroundColor: '#059669',
-                    borderRadius: 4
+                    borderRadius: 4,
+                    stack: 'stack0'
+                },
+                {
+                    label: 'Excedentes (Descuento)',
+                    data: costesExcedentes.map(val => -val), // Negativo para que cuelgue hacia abajo o se diferencie claramente
+                    backgroundColor: '#34d399',
+                    borderRadius: 4,
+                    // Propiedades para hacerla una barra más estrecha y separada (agrupada al lado)
+                    stack: 'stack1',
+                    barPercentage: 0.5,
+                    categoryPercentage: 0.6
                 }
             ]
         },
@@ -250,14 +263,14 @@ function renderizarGrafico(renovacion, mercado) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return ` ${context.dataset.label}: ${context.raw.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`;
+                            return ` ${context.dataset.label}: ${Math.abs(context.raw).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`;
                         }
                     }
                 }
             },
             scales: {
-                x: { stacked: true, grid: { display: false } },
-                y: { stacked: true, grid: { color: '#f1f5f9' } }
+                x: { grid: { display: false } },
+                y: { grid: { color: '#f1f5f9' } }
             }
         }
     })
@@ -276,6 +289,7 @@ function renderizarTablaRanking(renovacion, mercado) {
         </td>
         <td class="py-3 px-6 text-right">${renovacion.coste_fijo.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
         <td class="py-3 px-6 text-right">${renovacion.coste_energia.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
+        <td class="py-3 px-6 text-right text-emerald-600">-${(renovacion.coste_excedentes || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
         <td class="py-3 px-6 text-right font-bold">${renovacion.coste_total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
         <td class="py-3 px-6 text-right text-slate-400">-</td>
     `
@@ -295,6 +309,7 @@ function renderizarTablaRanking(renovacion, mercado) {
             </td>
             <td class="py-3 px-6 text-right">${t.coste_fijo.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
             <td class="py-3 px-6 text-right">${t.coste_energia.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
+            <td class="py-3 px-6 text-right text-emerald-600">-${(t.coste_excedentes || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
             <td class="py-3 px-6 text-right font-bold">${t.coste_total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
             <td class="py-3 px-6 text-right ${colorDiff}">
                 ${signoDiff}${t.diferencia_vs_renovacion.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €
