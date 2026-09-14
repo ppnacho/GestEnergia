@@ -63,7 +63,7 @@ async function cargarFiltrosIniciales() {
             const nomAlias = alias && alias[index] ? alias[index] : `Suministro ${index + 1}`
             const option = document.createElement('option')
             option.value = cups
-            option.textContent = `${nomAlias} (${cups})`
+            option.textContent = `${nomAlias}`
             selectSuministro.appendChild(option)
         })
 
