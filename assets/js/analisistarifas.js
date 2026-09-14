@@ -1,7 +1,6 @@
 import { supabase } from './supabaseClient.js';
 
 let chartInstance = null
-let aniosDisponibles = [] // Variable global para conservar los años cargados al inicio
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Validación de sesión
@@ -21,37 +20,57 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = '../index.html'
     })
 
-    // Listeners de los selectores y pestañas con la jerarquía correcta
     const selectSuministro = document.getElementById('select-suministro')
     const selectAnio = document.getElementById('select-anio')
 
-    selectSuministro.addEventListener('change', () => {
+    // PASO 1: Al cambiar de suministro, pedimos a la Edge Function los años de ESTE suministro
+    selectSuministro.addEventListener('change', async () => {
         const suministroVal = selectSuministro.value;
         
-        // Al cambiar de suministro, reseteamos el select de años pero volvemos a inyectar los años disponibles
-        selectAnio.innerHTML = '<option value="" disabled selected>Selecciona un año...</option><option value="todos">Todos los años</option>';
-        
-        if (aniosDisponibles && Array.isArray(aniosDisponibles)) {
-            aniosDisponibles.forEach(anio => {
+        // Reseteamos el select de años
+        selectAnio.innerHTML = '<option value="" disabled selected>Cargando años...</option>';
+        selectAnio.disabled = true;
+
+        if (!suministroVal) {
+            document.getElementById('estado-vacio').classList.remove('hidden')
+            document.getElementById('contenedor-resultados').classList.add('hidden')
+            selectAnio.innerHTML = '<option value="" disabled selected>Selecciona un año...</option>';
+            return;
+        }
+
+        try {
+            // Consultamos los años específicos para este suministro
+            const { data, error } = await supabase.functions.invoke('analisis-tarifas', {
+                body: { action: 'anios', suministro: suministroVal }
+            })
+
+            if (error || !data || data.error) throw error || new Error(data?.error)
+
+            const anios = data.anios || []
+
+            // Poblamos el desplegable con los años devueltos
+            selectAnio.innerHTML = '<option value="" disabled selected>Selecciona un año...</option><option value="todos">Todos los años</option>';
+            anios.forEach(anio => {
                 const opt = document.createElement('option');
                 opt.value = anio;
                 opt.textContent = anio;
                 selectAnio.appendChild(opt);
             });
+
+            selectAnio.disabled = false;
+
+        } catch (err) {
+            console.error('Error al cargar años del suministro:', err)
+            alert('No se pudieron cargar los años para este suministro.')
+            selectAnio.innerHTML = '<option value="" disabled selected>Error al cargar</option>';
         }
 
-        selectAnio.disabled = !suministroVal;
-
-        if (!suministroVal) {
-            document.getElementById('estado-vacio').classList.remove('hidden')
-            document.getElementById('contenedor-resultados').classList.add('hidden')
-            return;
-        }
-
-        // Ejecutamos análisis con el suministro recién elegido
-        ejecutarAnalisis();
+        // Ocultamos resultados hasta que el usuario elija también un año
+        document.getElementById('estado-vacio').classList.remove('hidden')
+        document.getElementById('contenedor-resultados').classList.add('hidden')
     })
 
+    // PASO 2: Al cambiar de año, ahora sí se ejecutan los cálculos completos
     selectAnio.addEventListener('change', ejecutarAnalisis)
 
     document.querySelectorAll('.tab-periodo').forEach(btn => {
@@ -63,30 +82,31 @@ document.addEventListener('DOMContentLoaded', async () => {
             e.target.classList.add('bg-white', 'text-emerald-700', 'shadow-sm', 'font-semibold');
             e.target.classList.remove('text-slate-600', 'font-medium');
             
-            ejecutarAnalisis();
+            if (selectAnio.value) {
+                ejecutarAnalisis();
+            }
         });
     });
 
-    // Cargar filtros iniciales una vez configurado todo el DOM y los eventos
-    await cargarFiltrosIniciales()
+    // Carga inicial de suministros
+    await cargarSuministrosIniciales()
 })
 
-// Solicita los suministros y años iniciales a la Edge Function (Acción 'init')
-async function cargarFiltrosIniciales() {
+// Solo trae la lista de suministros del usuario
+async function cargarSuministrosIniciales() {
     try {
         const { data, error } = await supabase.functions.invoke('analisis-tarifas', {
             body: { action: 'init' }
         })
 
         if (error || !data || data.error) {
-            console.error('Error al inicializar filtros:', error || data?.error)
+            console.error('Error al inicializar suministros:', error || data?.error)
             return
         }
 
         const { suministros, alias } = data.usuario
-        aniosDisponibles = data.anios || [] // Guardamos los años en la variable global
-
         const selectSuministro = document.getElementById('select-suministro')
+        
         selectSuministro.innerHTML = '<option value="" disabled selected>Selecciona suministro...</option>'
         
         suministros.forEach((cups, index) => {
@@ -97,49 +117,34 @@ async function cargarFiltrosIniciales() {
             selectSuministro.appendChild(option)
         })
 
-        // El selector de años empieza bloqueado y sin selección fija hasta que el usuario elija suministro
         const selectAnio = document.getElementById('select-anio')
-        selectAnio.innerHTML = '<option value="" disabled selected>Selecciona un año...</option><option value="todos">Todos los años</option>'
-        
-        aniosDisponibles.forEach(anio => {
-            const opt = document.createElement('option')
-            opt.value = anio
-            opt.textContent = anio
-            selectAnio.appendChild(opt)
-        })
+        selectAnio.innerHTML = '<option value="" disabled selected>Selecciona un año...</option>'
         selectAnio.disabled = true;
 
     } catch (err) {
-        console.error('Error en cargarFiltrosIniciales:', err)
+        console.error('Error en cargarSuministrosIniciales:', err)
     }
 }
 
-// Ejecuta el análisis de tarifas invocando a la Edge Function
+// PASO 3: Ejecuta los cálculos de tarifas mandando suministro, año y periodo
 async function ejecutarAnalisis() {
     const suministro = document.getElementById('select-suministro').value
     const selectAnio = document.getElementById('select-anio')
     const anio = selectAnio.value
     
+    if (!suministro || !anio) return;
+
     const tabActiva = document.querySelector('.tab-periodo.bg-white')
     const periodo = tabActiva ? tabActiva.getAttribute('data-periodo') : 'todos'
 
     const estadoVacio = document.getElementById('estado-vacio')
     const contenedorResultados = document.getElementById('contenedor-resultados')
 
-    if (!suministro) {
-        estadoVacio.classList.remove('hidden')
-        contenedorResultados.classList.add('hidden')
-        return
-    }
-
-    // Habilitar el selector de años al haber suministro seleccionado
-    selectAnio.disabled = false;
-
     try {
         const { data, error } = await supabase.functions.invoke('analisis-tarifas', {
             body: { 
                 suministro, 
-                anio: (anio && anio !== 'todos') ? parseInt(anio) : 'todos', 
+                anio: anio !== 'todos' ? parseInt(anio) : 'todos', 
                 periodo 
             }
         })
