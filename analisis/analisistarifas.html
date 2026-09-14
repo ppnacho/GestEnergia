@@ -84,74 +84,79 @@
         </div>
 
         <!-- Contenedor de Resultados (Oculto inicialmente) -->
-        <div id="contenedor-resultados" class="hidden space-y-8">
+    <div id="contenedor-resultados" class="hidden space-y-8">
 
-            <!-- 1. Bloque Ejecutivo: Ganadora vs Renovación -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Tarifa Renovación (Referencia) -->
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div>
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md">Referencia Actual</span>
-                        <h4 id="renovacion-nombre" class="text-xl font-bold text-slate-900 mt-3">Tarifa Renovación</h4>
-                        <p class="text-xs text-slate-500 mt-1">Condiciones propuestas para la renovación del contrato actual.</p>
-                    </div>
-                    <div class="mt-6 pt-4 border-t border-slate-100">
-                        <div class="flex justify-between items-baseline">
-                            <span class="text-xs text-slate-500 font-medium">Coste Estimado Total:</span>
-                            <span id="renovacion-coste" class="text-2xl font-bold text-slate-900">0,00 €</span>
-                        </div>
-                    </div>
+        <!-- 1. Bloque Ejecutivo: Las 3 tarjetas en la misma fila -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Tarifa Renovación (Referencia) -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md">Referencia Actual</span>
+                    <h4 id="renovacion-nombre" class="text-xl font-bold text-slate-900 mt-3">Tarifa Renovación</h4>
+                    <p class="text-xs text-slate-500 mt-1">Condiciones propuestas para la renovación del contrato actual.</p>
                 </div>
-
-                <!-- Card de Resumen de Energía y Periodo -->
-                <div class="bg-white rounded-xl shadow-md p-5 border border-slate-100 flex flex-col justify-between">
-                    <div>
-                        <div class="flex justify-between items-center mb-3">
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Datos de Energía del Periodo</h3>
-                            <span id="resumen-meses-badge" class="bg-indigo-50 text-indigo-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">-- meses</span>
-                        </div>
-                        <div class="grid grid-cols-4 gap-2 text-center py-2 border-y border-slate-100">
-                            <div>
-                                <span class="block text-[10px] uppercase text-slate-400 font-medium">Punta</span>
-                                <span id="kwh-punta" class="text-sm font-bold text-slate-700">0 kWh</span>
-                            </div>
-                            <div>
-                                <span class="block text-[10px] uppercase text-slate-400 font-medium">Llano</span>
-                                <span id="kwh-llano" class="text-sm font-bold text-slate-700">0 kWh</span>
-                            </div>
-                            <div>
-                                <span class="block text-[10px] uppercase text-slate-400 font-medium">Valle</span>
-                                <span id="kwh-valle" class="text-sm font-bold text-slate-700">0 kWh</span>
-                            </div>
-                            <div>
-                                <span class="block text-[10px] uppercase text-slate-400 font-medium">Excedentes</span>
-                                <span id="kwh-excedentes" class="text-sm font-bold text-emerald-600">0 kWh</span>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="text-[11px] text-slate-400 mt-2 text-center">Volumen total de kWh considerados para este cálculo.</p>
-                </div>
-
-                <!-- Tarifa Ganadora (Recomendada) -->
-                <div class="card-ganadora p-6 rounded-2xl shadow-md lg:col-span-2 flex flex-col justify-between">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                            <span class="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-200/60 px-2.5 py-1 rounded-md">⭐ Mejor Opción de Mercado</span>
-                            <h4 id="ganadora-nombre" class="text-2xl font-extrabold text-emerald-950 mt-3">-</h4>
-                            <p id="ganadora-sub" class="text-xs text-emerald-800 mt-1">Identificada como la alternativa más económica según tu histórico de consumo.</p>
-                        </div>
-                        <div class="text-left sm:text-right bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-emerald-200">
-                            <span class="text-xs text-emerald-800 font-semibold block">Ahorro Estimado:</span>
-                            <span id="ganadora-ahorro-eur" class="text-2xl font-extrabold text-emerald-700">0,00 €</span>
-                            <span id="ganadora-ahorro-pct" class="text-xs font-bold text-emerald-600 block">(0,0%)</span>
-                        </div>
-                    </div>
-                    <div class="mt-6 pt-4 border-t border-emerald-200/60 flex items-center justify-between">
-                        <span class="text-xs font-semibold text-emerald-900">Coste Total con esta tarifa:</span>
-                        <span id="ganadora-coste" class="text-xl font-bold text-emerald-950">0,00 €</span>
+                <div class="mt-6 pt-4 border-t border-slate-100">
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-xs text-slate-500 font-medium">Coste Estimado Total:</span>
+                        <span id="renovacion-coste" class="text-2xl font-bold text-slate-900">0,00 €</span>
                     </div>
                 </div>
             </div>
+
+            <!-- Card de Resumen de Energía y Periodo -->
+            <div class="bg-white rounded-xl shadow-md p-5 border border-slate-100 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Datos de Energía</h3>
+                        <span id="resumen-meses-badge" class="bg-indigo-50 text-indigo-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">-- meses</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-1 text-center py-2 border-y border-slate-100">
+                        <div>
+                            <span class="block text-[9px] uppercase text-slate-400 font-medium">Punta</span>
+                            <span id="kwh-punta" class="text-xs font-bold text-slate-700">0 kWh</span>
+                        </div>
+                        <div>
+                            <span class="block text-[9px] uppercase text-slate-400 font-medium">Llano</span>
+                            <span id="kwh-llano" class="text-xs font-bold text-slate-700">0 kWh</span>
+                        </div>
+                        <div>
+                            <span class="block text-[9px] uppercase text-slate-400 font-medium">Valle</span>
+                            <span id="kwh-valle" class="text-xs font-bold text-slate-700">0 kWh</span>
+                        </div>
+                        <div>
+                            <span class="block text-[9px] uppercase text-slate-400 font-medium">Exced.</span>
+                            <span id="kwh-excedentes" class="text-xs font-bold text-emerald-600">0 kWh</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-2 text-center">Volumen total de kWh considerados.</p>
+            </div>
+
+            <!-- Tarifa Ganadora (Recomendada - Ajustada a 1 columna) -->
+            <div class="card-ganadora p-6 rounded-2xl shadow-md flex flex-col justify-between">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-200/60 px-2.5 py-1 rounded-md">⭐ Mejor Opción</span>
+                    <h4 id="ganadora-nombre" class="text-xl font-extrabold text-emerald-950 mt-3">-</h4>
+                    <p id="ganadora-sub" class="text-xs text-emerald-800 mt-1">Alternativa más económica según tu histórico.</p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-emerald-200/60">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-semibold text-emerald-900">Ahorro Estimado:</span>
+                        <div class="text-right">
+                            <span id="ganadora-ahorro-eur" class="text-lg font-extrabold text-emerald-700">0,00 €</span>
+                            <span id="ganadora-ahorro-pct" class="text-[11px] font-bold text-emerald-600 block">(0,0%)</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-2 pt-2 border-t border-emerald-200/40">
+                        <span class="text-xs font-semibold text-emerald-900">Coste Total:</span>
+                        <span id="ganadora-coste" class="text-base font-bold text-emerald-950">0,00 €</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
 
             <!-- 2. Gráfico Comparativo Principal -->
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
