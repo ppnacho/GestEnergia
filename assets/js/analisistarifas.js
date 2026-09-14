@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient.js';
 
 let chartInstance = null
+let aniosDisponibles = [] // Variable global para conservar los años cargados al inicio
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Validación de sesión
@@ -27,8 +28,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     selectSuministro.addEventListener('change', () => {
         const suministroVal = selectSuministro.value;
         
-        // Al cambiar de suministro, reseteamos y dejamos por defecto la opción vacía y 'todos'
+        // Al cambiar de suministro, reseteamos el select de años pero volvemos a inyectar los años disponibles
         selectAnio.innerHTML = '<option value="" disabled selected>Selecciona un año...</option><option value="todos">Todos los años</option>';
+        
+        if (aniosDisponibles && Array.isArray(aniosDisponibles)) {
+            aniosDisponibles.forEach(anio => {
+                const opt = document.createElement('option');
+                opt.value = anio;
+                opt.textContent = anio;
+                selectAnio.appendChild(opt);
+            });
+        }
+
         selectAnio.disabled = !suministroVal;
 
         if (!suministroVal) {
@@ -37,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // Ejecutamos análisis con el suministro recién elegido (por defecto cogerá 'todos' o lo que toque)
+        // Ejecutamos análisis con el suministro recién elegido
         ejecutarAnalisis();
     })
 
@@ -73,7 +84,7 @@ async function cargarFiltrosIniciales() {
         }
 
         const { suministros, alias } = data.usuario
-        const anios = data.anios
+        aniosDisponibles = data.anios || [] // Guardamos los años en la variable global
 
         const selectSuministro = document.getElementById('select-suministro')
         selectSuministro.innerHTML = '<option value="" disabled selected>Selecciona suministro...</option>'
@@ -90,7 +101,7 @@ async function cargarFiltrosIniciales() {
         const selectAnio = document.getElementById('select-anio')
         selectAnio.innerHTML = '<option value="" disabled selected>Selecciona un año...</option><option value="todos">Todos los años</option>'
         
-        anios.forEach(anio => {
+        aniosDisponibles.forEach(anio => {
             const opt = document.createElement('option')
             opt.value = anio
             opt.textContent = anio
