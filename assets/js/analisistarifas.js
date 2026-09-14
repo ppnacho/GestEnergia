@@ -14,12 +14,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Botón de Cerrar Sesión
-    document.getElementById('btn-logout').addEventListener('click', async () => {
-        await supabase.auth.signOut()
-        window.location.href = '../index.html'
-    })
-
     const selectSuministro = document.getElementById('select-suministro')
     const selectAnio = document.getElementById('select-anio')
 
