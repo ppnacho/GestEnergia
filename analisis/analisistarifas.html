@@ -103,6 +103,35 @@
                     </div>
                 </div>
 
+                <!-- Card de Resumen de Energía y Periodo -->
+                <div class="bg-white rounded-xl shadow-md p-5 border border-slate-100 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Datos de Energía del Periodo</h3>
+                            <span id="resumen-meses-badge" class="bg-indigo-50 text-indigo-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">-- meses</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-2 text-center py-2 border-y border-slate-100">
+                            <div>
+                                <span class="block text-[10px] uppercase text-slate-400 font-medium">Punta</span>
+                                <span id="kwh-punta" class="text-sm font-bold text-slate-700">0 kWh</span>
+                            </div>
+                            <div>
+                                <span class="block text-[10px] uppercase text-slate-400 font-medium">Llano</span>
+                                <span id="kwh-llano" class="text-sm font-bold text-slate-700">0 kWh</span>
+                            </div>
+                            <div>
+                                <span class="block text-[10px] uppercase text-slate-400 font-medium">Valle</span>
+                                <span id="kwh-valle" class="text-sm font-bold text-slate-700">0 kWh</span>
+                            </div>
+                            <div>
+                                <span class="block text-[10px] uppercase text-slate-400 font-medium">Excedentes</span>
+                                <span id="kwh-excedentes" class="text-sm font-bold text-emerald-600">0 kWh</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-2 text-center">Volumen total de kWh considerados para este cálculo.</p>
+                </div>
+
                 <!-- Tarifa Ganadora (Recomendada) -->
                 <div class="card-ganadora p-6 rounded-2xl shadow-md lg:col-span-2 flex flex-col justify-between">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
