@@ -170,6 +170,10 @@ async function ejecutarAnalisis() {
 function renderizarResultados(data) {
     const { tarifa_renovacion, mercado, ganadora } = data
 
+    // >>> PÉGALO AQUÍ <<<
+    // Filtramos el mercado para excluir la tarifa 'Renovacion' y evitar duplicados
+    const mercadoFiltrado = mercado.filter(t => t.nombre?.trim().toLowerCase() !== 'renovacion')
+
     document.getElementById('renovacion-nombre').textContent = tarifa_renovacion.nombre
     document.getElementById('renovacion-coste').textContent = `${tarifa_renovacion.coste_total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`
 
@@ -196,8 +200,9 @@ function renderizarResultados(data) {
         document.getElementById('ganadora-ahorro-pct').textContent = '(0,0%)'
     }
 
-    renderizarGrafico(tarifa_renovacion, mercado)
-    renderizarTablaRanking(tarifa_renovacion, mercado)
+    // Y recuerda pasar 'mercadoFiltrado' en lugar de 'mercado' aquí abajo:
+    renderizarGrafico(tarifa_renovacion, mercadoFiltrado)
+    renderizarTablaRanking(tarifa_renovacion, mercadoFiltrado)
 }
 
 function ahorrioFormateado(num) {
