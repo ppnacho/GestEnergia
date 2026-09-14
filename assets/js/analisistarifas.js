@@ -20,9 +20,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = '../index.html'
     })
 
-    // Listeners de los selectores y pestañas
-    document.getElementById('select-suministro').addEventListener('change', ejecutarAnalisis)
-    document.getElementById('select-anio').addEventListener('change', ejecutarAnalisis)
+    // Listeners de los selectores y pestañas con la jerarquía correcta
+    const selectSuministro = document.getElementById('select-suministro')
+    const selectAnio = document.getElementById('select-anio')
+
+    selectSuministro.addEventListener('change', () => {
+        const suministroVal = selectSuministro.value;
+        
+        // Al cambiar de suministro, reseteamos y dejamos por defecto la opción vacía y 'todos'
+        selectAnio.innerHTML = '<option value="" disabled selected>Selecciona un año...</option><option value="todos">Todos los años</option>';
+        selectAnio.disabled = !suministroVal;
+
+        if (!suministroVal) {
+            document.getElementById('estado-vacio').classList.remove('hidden')
+            document.getElementById('contenedor-resultados').classList.add('hidden')
+            return;
+        }
+
+        // Ejecutamos análisis con el suministro recién elegido (por defecto cogerá 'todos' o lo que toque)
+        ejecutarAnalisis();
+    })
+
+    selectAnio.addEventListener('change', ejecutarAnalisis)
 
     document.querySelectorAll('.tab-periodo').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -57,7 +76,7 @@ async function cargarFiltrosIniciales() {
         const anios = data.anios
 
         const selectSuministro = document.getElementById('select-suministro')
-        selectSuministro.innerHTML = '<option value="">Selecciona suministro...</option>'
+        selectSuministro.innerHTML = '<option value="" disabled selected>Selecciona suministro...</option>'
         
         suministros.forEach((cups, index) => {
             const nomAlias = alias && alias[index] ? alias[index] : `Suministro ${index + 1}`
@@ -67,19 +86,17 @@ async function cargarFiltrosIniciales() {
             selectSuministro.appendChild(option)
         })
 
+        // El selector de años empieza bloqueado y sin selección fija hasta que el usuario elija suministro
         const selectAnio = document.getElementById('select-anio')
-        selectAnio.innerHTML = '<option value="">Todos los años</option>' // Opcional por si quieres limpiar
+        selectAnio.innerHTML = '<option value="" disabled selected>Selecciona un año...</option><option value="todos">Todos los años</option>'
+        
         anios.forEach(anio => {
             const opt = document.createElement('option')
             opt.value = anio
             opt.textContent = anio
             selectAnio.appendChild(opt)
         })
-
-        if (suministros.length > 0) {
-            selectSuministro.value = suministros[0]
-            ejecutarAnalisis()
-        }
+        selectAnio.disabled = true;
 
     } catch (err) {
         console.error('Error en cargarFiltrosIniciales:', err)
@@ -89,7 +106,8 @@ async function cargarFiltrosIniciales() {
 // Ejecuta el análisis de tarifas invocando a la Edge Function
 async function ejecutarAnalisis() {
     const suministro = document.getElementById('select-suministro').value
-    const anio = document.getElementById('select-anio').value
+    const selectAnio = document.getElementById('select-anio')
+    const anio = selectAnio.value
     
     const tabActiva = document.querySelector('.tab-periodo.bg-white')
     const periodo = tabActiva ? tabActiva.getAttribute('data-periodo') : 'todos'
@@ -103,9 +121,16 @@ async function ejecutarAnalisis() {
         return
     }
 
+    // Habilitar el selector de años al haber suministro seleccionado
+    selectAnio.disabled = false;
+
     try {
         const { data, error } = await supabase.functions.invoke('analisis-tarifas', {
-            body: { suministro, anio: anio ? parseInt(anio) : null, periodo }
+            body: { 
+                suministro, 
+                anio: (anio && anio !== 'todos') ? parseInt(anio) : 'todos', 
+                periodo 
+            }
         })
 
         if (error) throw error
