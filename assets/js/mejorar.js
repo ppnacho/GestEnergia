@@ -3,7 +3,6 @@ import { supabase } from './supabaseClient.js';
 let datosAnalisisGlobal = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Validar sesión
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
         const { data: { session } } = await supabase.auth.getSession()
@@ -13,7 +12,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // 2. Leer parámetros de la URL
     const params = new URLSearchParams(window.location.search);
     const suministro = params.get('suministro');
     const anio = params.get('anio');
@@ -25,14 +23,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Mostrar contexto en la UI
     document.getElementById('badge-contexto').textContent = `CUPS: ${suministro} | Año: ${anio} | Periodo: ${periodo}`;
-    
-    // Actualizar enlace de vuelta por si acaso
     document.getElementById('btn-volver').href = `../analisistarifas.html`;
 
     try {
-        // 3. Cargar los datos del análisis llamando a la Edge Function
         const { data, error } = await supabase.functions.invoke('analisis-tarifas', {
             body: { 
                 suministro, 
@@ -41,9 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
-        if (error || !data || data.error) {
-            throw error || new Error(data?.error);
-        }
+        if (error || !data || data.error) throw error || new Error(data?.error);
 
         datosAnalisisGlobal = data;
         inicializarSimulador(data);
@@ -55,10 +47,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function inicializarSimulador(data) {
-    const { tarifa_renovacion, mercado } = data;
+    const { mercado } = data;
     const selectRival = document.getElementById('select-tarifa-rival');
-
-    // Filtrar mercado (excluyendo Renovación)
     const rivales = mercado.filter(t => t.nombre?.trim().toLowerCase() !== 'renovacion');
 
     selectRival.innerHTML = '<option value="" disabled selected>Selecciona una tarifa...</option>';
@@ -69,7 +59,6 @@ function inicializarSimulador(data) {
         selectRival.appendChild(opt);
     });
 
-    // Eventos para recalcular al mover cualquier parámetro
     selectRival.addEventListener('change', ejecutarSimulacionMejora);
     document.getElementById('select-estrategia').addEventListener('change', ejecutarSimulacionMejora);
     
@@ -78,6 +67,10 @@ function inicializarSimulador(data) {
         document.getElementById('label-intensidad').textContent = `Margen objetivo: -${e.target.value} €`;
         ejecutarSimulacionMejora();
     });
+}
+
+function mercadoFiltrado() {
+    return datosAnalisisGlobal.mercado.filter(t => t.nombre?.trim().toLowerCase() !== 'renovacion');
 }
 
 function ejecutarSimulacionMejora() {
@@ -89,20 +82,35 @@ function ejecutarSimulacionMejora() {
     const estrategia = document.getElementById('select-estrategia').value;
     const margenSeguridad = parseFloat(document.getElementById('range-intensidad').value);
 
-    // Coste objetivo que debe alcanzar la rival para batir a la renovación por el margen indicado
+    // Coste objetivo a batir
     const costeObjetivo = tarifaRenovacion.coste_total - margenSeguridad;
     const costeActualRival = tarifaRival.coste_total;
+    const recorteNecesario = Math.max(0, costeActualRival - costeObjetivo);
 
-    // Diferencia que necesitamos recortar
-    const recorteNecesario = costeActualRival - costeObjetivo;
-
-    // Renderizar resultados preliminares en pantalla
     document.getElementById('sim-coste-original').textContent = `${costeActualRival.toFixed(2)} €`;
-    
-    let costeNuevoRival = costeActualRival;
-    if (recorteNecesario > 0) {
-        costeNuevoRival = costeActualRival - recorteNecesario;
+
+    // Factor de descuento proporcional necesario para conseguir el recorte
+    // Evitamos división por cero si el coste actual es 0
+    let factorDescuento = 0;
+    if (costeActualRival > 0 && recorteNecesario > 0) {
+        if (estrategia === 'mixta') {
+            factorDescuento = recorteNecesario / (tarifaRival.coste_energia + tarifaRival.coste_fijo);
+        } else if (estrategia === 'energia') {
+            factorDescuento = tarifaRival.coste_energia > 0 ? recorteNecesario / tarifaRival.coste_energia : 0;
+        } else if (estrategia === 'potencia') {
+            factorDescuento = tarifaRival.coste_fijo > 0 ? recorteNecesario / tarifaRival.coste_fijo : 0;
+        } else {
+            factorDescuento = recorteNecesario / (tarifaRival.coste_energia + tarifaRival.coste_fijo);
+        }
     }
+
+    // Limitamos el descuento para que no sea un absurdo (máximo 40% de rebaja)
+    factorDescuento = Math.min(0.40, Math.max(0, factorDescuento));
+
+    // Calculamos nuevo coste estimado
+    let ahorroCalculado = recorteNecesario;
+    let costeNuevoRival = costeActualRival - ahorroCalculado;
+    if (costeNuevoRival < 0) costeNuevoRival = 0;
 
     document.getElementById('sim-coste-nuevo').textContent = `${costeNuevoRival.toFixed(2)} €`;
     
@@ -110,30 +118,58 @@ function ejecutarSimulacionMejora() {
     document.getElementById('sim-diferencia-renovacion').textContent = `(${diferenciaRenovacion <= 0 ? '' : '+'}${diferenciaRenovacion.toFixed(2)} € vs Renovación)`;
     
     const ahorroCliente = tarifaRenovacion.coste_total - costeNuevoRival;
-    document.getElementById('sim-ahorro-cliente').textContent = `${ahorrioFormateado(ahorroCliente)} €`;
+    document.getElementById('sim-ahorro-cliente').textContent = `${ahorroCliente.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 
-    // Visualizar desglose de estrategia aplicada
-    renderizarDesgloseEstrategia(tarifaRival, estrategia, recorteNecesario);
+    // Renderizar tablas detalladas de precios unitarios
+    renderizarTablasDetalladas(tarifaRival, estrategia, factorDescuento);
 }
 
-function mercadoFiltrado() {
-    return datosAnalisisGlobal.mercado.filter(t => t.nombre?.trim().toLowerCase() !== 'renovacion');
-}
+function renderizarTablasDetalladas(tarifa, estrategia, factor) {
+    const tbodyEnergia = document.getElementById('tabla-energia-detallada');
+    const tbodyPotencia = document.getElementById('tabla-potencia-detallada');
+    tbodyEnergia.innerHTML = '';
+    tbodyPotencia.innerHTML = '';
 
-function renderizarDesgloseEstrategia(tarifa, estrategia, recorte) {
-    const contenedor = document.getElementById('tabla-precios-modificados');
-    contenedor.innerHTML = '';
+    document.getElementById('badge-estrategia-aplicada').textContent = `Estrategia: ${estrategia.toUpperCase()} (Ajuste ~${(factor * 100).toFixed(1)}%)`;
 
-    let mensajeEstrategia = '';
-    if (recorte <= 0) {
-        mensajeEstrategia = '<div class="col-span-full text-emerald-600 font-semibold">¡Esta tarifa ya es más económica que la Renovación sin modificar precios!</div>';
-    } else {
-        mensajeEstrategia = `<div class="col-span-full text-indigo-700 font-medium">Para superar a Renovación, se requiere un ajuste total de <b>-${recorte.toFixed(2)} €</b> aplicando la estrategia: <span uppercase>${estrategia}</span>.</div>`;
-    }
-    
-    contenedor.innerHTML = mensajeEstrategia;
-}
+    // 1. Desglose de Energía (Punta, Llano, Valle si existen en los precios de la tarifa)
+    // Supongamos que la tarifa trae un objeto de precios unitarios o los simulamos de forma proporcional
+    const preciosEnergiaActual = tarifa.precios_energia || { punta: 0.15, llano: 0.12, valle: 0.09 }; 
+    // Nota: Si tu estructura de objeto guarda los precios unitarios en otro campo, ajústalo aquí. 
+    // Vamos a aplicar el factor según la estrategia elegida:
+    const aplicaEnergia = estrategia === 'mixta' || estrategia === 'energia';
 
-function ahorrioFormateado(num) {
-    return Math.max(0, num).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    ['punta', 'llano', 'valle'].forEach(periodo => {
+        const precioActual = preciosEnergiaActual[periodo] || 0.12; // Valor por defecto orientativo si no viene desglosado
+        const rebaja = aplicaEnergia ? precioActual * factor : 0;
+        const precioNuevo = Math.max(0.01, precioActual - rebaja);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="py-2.5 px-4 font-medium uppercase text-slate-700">${periodo}</td>
+            <td class="py-2.5 px-4 text-right text-slate-600">${precioActual.toFixed(5)} €</td>
+            <td class="py-2.5 px-4 text-right font-bold text-indigo-700">${precioNuevo.toFixed(5)} €</td>
+            <td class="py-2.5 px-4 text-right text-emerald-600 font-semibold">-${(rebaja).toFixed(5)} € (${(factor * 100).toFixed(0)}%)</td>
+        `;
+        tbodyEnergia.appendChild(tr);
+    });
+
+    // 2. Desglose de Potencia (P1, P2)
+    const preciosPotenciaActual = tarifa.precios_potencia || { p1: 0.08, p2: 0.04 };
+    const aplicaPotencia = estrategia === 'mixta' || estrategia === 'potencia';
+
+    ['p1', 'p2'].forEach(periodo => {
+        const precioActual = preciosPotenciaActual[periodo] || 0.06;
+        const rebaja = aplicaPotencia ? precioActual * factor : 0;
+        const precioNuevo = Math.max(0.005, precioActual - rebaja);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="py-2.5 px-4 font-medium uppercase text-slate-700">${periodo}</td>
+            <td class="py-2.5 px-4 text-right text-slate-600">${precioActual.toFixed(5)} €</td>
+            <td class="py-2.5 px-4 text-right font-bold text-indigo-700">${precioNuevo.toFixed(5)} €</td>
+            <td class="py-2.5 px-4 text-right text-emerald-600 font-semibold">-${(rebaja).toFixed(5)} €</td>
+        `;
+        tbodyPotencia.appendChild(tr);
+    });
 }
