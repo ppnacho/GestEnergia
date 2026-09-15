@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // Redirigir a la página de mejora pasando los parámetros en la URL
-        window.location.href = `analisis/mejorar.html?suministro=${encodeURIComponent(suministro)}&anio=${encodeURIComponent(anio)}&periodo=${encodeURIComponent(periodo)}`;
+        window.location.href = `../analisis/mejorar.html?suministro=${encodeURIComponent(suministro)}&anio=${encodeURIComponent(anio)}&periodo=${encodeURIComponent(periodo)}`;
     });
 })
 
