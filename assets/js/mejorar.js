@@ -229,15 +229,10 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
 }
 
 function calcularCosteConPreciosUsuario() {
-    // Necesitamos recuperar los volúmenes de energía y potencia del análisis global
-    // (Asegúrate de que 'datosAnalisisGlobal' contenga los kWh consumidos y potencias contratadas si los guardas, 
-    // o puedes recalcularlos a partir de los costes actuales divididos por el precio base de la tarifa).
-    
-    // Alternativa limpia y directa basada en los inputs modificados y los totales actuales:
     let inputs = document.querySelectorAll('.input-usuario-precio');
     if (inputs.length === 0) return;
 
-    // Recogemos los valores introducidos por el usuario
+    // Recogemos los valores introducidos por el usuario en las cajas
     let preciosUser = {};
     inputs.forEach(input => {
         let tipo = input.getAttribute('data-tipo');
@@ -246,33 +241,44 @@ function calcularCosteConPreciosUsuario() {
         preciosUser[tipo][periodo] = parseFloat(input.value) || 0;
     });
 
-    // NOTA: Para computar el coste exacto con estos nuevos precios, 
-    // multiplicamos los kWh de cada periodo por el nuevo precio introducido por el usuario 
-    // + el coste fijo de potencia recalculado + restando excedentes.
-    // Si ya tienes los kwh guardados en alguna variable global al hacer el init (ej: datosAnalisisGlobal.resumen_energia), úsalos:
     const kwh = datosAnalisisGlobal.resumen_energia || { punta: 0, llano: 0, valle: 0, excedentes: 0 };
     
-    // Obtenemos potencias del usuario (si las tienes accesibles o puedes estimarlas de la tarifa seleccionada)
     const selectRivalIndex = document.getElementById('select-tarifa-rival').value;
     if (selectRivalIndex === "") return;
     const tarifaRival = mercadoFiltrado()[selectRivalIndex];
     const tarifaRenovacion = datosAnalisisGlobal.tarifa_renovacion;
 
-    // Cálculo del coste de energía con precios de usuario
+    // 1. Cálculo del coste de energía con precios de usuario
     let pEnergia = preciosUser['energia'] || {};
     let costeEnergiaUser = (kwh.punta * (pEnergia.punta ?? 0)) +
                            (kwh.llano * (pEnergia.llano ?? 0)) +
                            (kwh.valle * (pEnergia.valle ?? 0));
 
-    // Cálculo del coste de potencia (asumiendo proporción fija o usando los fijos introducidos)
-    let pPotencia = preciosUser['potencia'] || {};
-    // Usamos la proporción original de costes fijos de la tarifa rival adaptada a los nuevos inputs
-    let proporcionFijoPunta = tarifaRival.fijo_punta > 0 ? (pPotencia.fijo_punta / tarifaRival.fijo_punta) : 1;
-    let proporcionFijoValle = tarifaRival.fijo_valle > 0 ? (pPotencia.fijo_valle / tarifaRival.fijo_valle) : 1;
-    let costeFijoUser = (tarifaRival.coste_fijo * ((proporcionFijoPunta + proporcionFijoValle) / 2));
+    // 2. Cálculo corregido del coste de potencia usando potencias reales en kW y días del periodo
+    const potPuntaW = datosAnalisisGlobal.pot_punta_w || datosAnalisisGlobal.potencia_punta_w || 0; 
+    const potValleW = datosAnalisisGlobal.potencia_valle_w || datosAnalisisGlobal.pot_valle_w || 0;
+    const factorMeses = datosAnalisisGlobal.factor_meses || 12;
+    const diasTotales = factorMeses * 30;
 
-    // Excedentes
-    let pExcedente = preciosUser['excedente']?.excedente ?? tarifaRival.excedente;
+    let pPotencia = preciosUser['potencia'] || {};
+    let precioPuntaUser = pPotencia.fijo_punta ?? tarifaRival.fijo_punta ?? 0;
+    let precioValleUser = pPotencia.fijo_valle ?? tarifaRival.fijo_valle ?? 0;
+
+    // Si potPuntaW y potValleW vienen en W, los pasamos a kW (/1000) y multiplicamos por precio (€/kW·día) y días
+    let costeFijoPuntaUser = (potPuntaW / 1000) * precioPuntaUser * diasTotales;
+    let costeFijoValleUser = (potValleW / 1000) * precioValleUser * diasTotales;
+    let costeFijoUser = costeFijoPuntaUser + costeFijoValleUser;
+
+    // Fallback por seguridad si las potencias no venían directas en la raíz del objeto global
+    if (costeFijoUser === 0 && tarifaRival.coste_fijo > 0) {
+        // Si no tenemos los W sueltos a mano, escalamos proporcionalmente respecto al coste fijo original de la tarifa rival
+        let propPunta = tarifaRival.fijo_punta > 0 ? (precioPuntaUser / tarifaRival.fijo_punta) : 1;
+        let propValle = tarifaRival.fijo_valle > 0 ? (precioValleUser / tarifaRival.fijo_valle) : 1;
+        costeFijoUser = tarifaRival.coste_fijo * ((propPunta + propValle) / 2);
+    }
+
+    // 3. Excedentes
+    let pExcedente = preciosUser['excedente']?.excedente ?? tarifaRival.excedente ?? 0;
     let costeExcedentesUser = kwh.excedentes * pExcedente;
 
     // Coste total resultante para el usuario
@@ -286,6 +292,6 @@ function calcularCosteConPreciosUsuario() {
     const labelAhorroUser = document.getElementById('sim-ahorro-usuario');
     if (labelAhorroUser) {
         labelAhorroUser.textContent = `${ahorroUsuarioFinal.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
-        labelAhorroUser.className = `text-lg font-bold ${ahorroUsuarioFinal >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+        labelAhorroUser.className = `text-2xl font-bold ${ahorroUsuarioFinal >= 0 ? 'text-emerald-700' : 'text-rose-600'}`;
     }
 }
