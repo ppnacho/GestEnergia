@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient.js';
 
-let datosAnalisisGlobal = null; // Almacenará la respuesta limpia de la Edge Function
+let datosAnalisisGlobal = null; 
+let tarifaPreseleccionadaUrl = null; // Para guardar la tarifa que viene en la URL
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Validación de sesión
@@ -34,13 +35,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         actualizarSimulacion()
     })
 
-    // 4. Capturar los parámetros pasados por URL desde analisistarifas.html
+    // 4. Capturar TODOS los parámetros pasados por URL desde analisistarifas.html
     const urlParams = new URLSearchParams(window.location.search)
     const suministro = urlParams.get('suministro')
     const anio = urlParams.get('anio')
     const periodo = urlParams.get('periodo') || 'todos'
+    tarifaPreseleccionadaUrl = urlParams.get('tarifa') // <-- Capturamos la tarifa si viene en la URL
 
-    // Opcional: Mostrar el alias o suministro actual si tienes un elemento para ello
+    // Opcional: Mostrar el alias o suministro actual
     const aliasSuministro = sessionStorage.getItem('alias_suministro')
     const elemTitulo = document.getElementById('titulo-suministro-actual')
     if (elemTitulo && aliasSuministro) {
@@ -53,11 +55,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         return
     }
 
-    // 5. Lanzar el análisis automáticamente con los datos heredados
+    // 5. Lanzar el análisis automáticamente
     await ejecutarAnalisisMejoraAutomatico(suministro, anio, periodo)
 })
 
-// Ejecuta la llamada a la Edge Function de forma automática con los parámetros de la URL
 async function ejecutarAnalisisMejoraAutomatico(suministro, anio, periodo) {
     try {
         const { data, error } = await supabase.functions.invoke('analisis-tarifas', {
@@ -74,13 +75,14 @@ async function ejecutarAnalisisMejoraAutomatico(suministro, anio, periodo) {
             return
         }
 
-        // Guardamos la respuesta completa de la Edge Function en la variable global
         datosAnalisisGlobal = data
 
-        // Poblamos el selector de tarifas rivales con las opciones de mercado que devuelve la función
-        poblarSelectorTarifasRivales(data.mercado)
+        // Pintar resumen de energía y meses (con 3 decimales)
+        pintarResumenEnergiaYMeses(data.resumen_energia)
 
-        // Actualizamos la simulación visual con los datos frescos
+        // Poblamos el selector y autoseleccionamos si venía en la URL
+        poblarSelectorTarifasRivales(data.mercado, tarifaPreseleccionadaUrl)
+
         actualizarSimulacion()
 
     } catch (err) {
@@ -89,21 +91,56 @@ async function ejecutarAnalisisMejoraAutomatico(suministro, anio, periodo) {
     }
 }
 
-function poblarSelectorTarifasRivales(mercado) {
+function pintarResumenEnergiaYMeses(resumenEnergia) {
+    if (!resumenEnergia) return
+
+    const badgeMeses = document.getElementById('resumen-meses-badge')
+    if (badgeMeses) {
+        badgeMeses.textContent = `${resumenEnergia.factor_meses} meses`
+    }
+
+    const formato3Dec = (valor) => (valor || 0).toLocaleString('es-ES', { 
+        minimumFractionDigits: 3, 
+        maximumFractionDigits: 3 
+    })
+
+    const elPunta = document.getElementById('kwh-punta')
+    const elLlano = document.getElementById('kwh-llano')
+    const elValle = document.getElementById('kwh-valle')
+    const elExcedentes = document.getElementById('kwh-excedentes')
+
+    if (elPunta) elPunta.textContent = `${formato3Dec(resumenEnergia.punta)} kWh`
+    if (elLlano) elLlano.textContent = `${formato3Dec(resumenEnergia.llano)} kWh`
+    if (elValle) elValle.textContent = `${formato3Dec(resumenEnergia.valle)} kWh`
+    if (elExcedentes) elExcedentes.textContent = `${formato3Dec(resumenEnergia.excedentes)} kWh`
+}
+
+function poblarSelectorTarifasRivales(mercado, tarifaUrl) {
     const select = document.getElementById('select-tarifa-rival')
     if (!select) return
 
     select.innerHTML = '<option value="" disabled selected>Selecciona una tarifa a batir...</option>'
     
+    let indexASelected = null;
+
     mercado.forEach((t, index) => {
         const opt = document.createElement('option')
-        opt.value = index // Guardamos el índice del array de mercado
+        opt.value = index 
         opt.textContent = `${t.nombre} (${t.coste_total.toFixed(2)} €)`
         select.appendChild(opt)
+
+        // Si coincide con la que venía en la URL (por nombre exacto o ID), la marcamos
+        if (tarifaUrl && (t.nombre.toLowerCase() === tarifaUrl.toLowerCase() || t.id == tarifaUrl)) {
+            indexASelected = index
+        }
     })
+
+    // Si se encontró la tarifa de la url, la seleccionamos y disparamos el evento
+    if (indexASelected !== null) {
+        select.value = indexASelected
+    }
 }
 
-// Realiza los cálculos interactivos de la contraoferta basados en los totales del servidor
 function actualizarSimulacion() {
     if (!datosAnalisisGlobal) return
 
