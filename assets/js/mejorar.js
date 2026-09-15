@@ -1,12 +1,9 @@
 import { supabase } from './supabaseClient.js';
 
-let datosAnalisisGlobal = null; 
-let tarifaPreseleccionadaUrl = null; // Para guardar la tarifa que viene en la URL
+let datosAnalisisGlobal = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Validación de sesión
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
     if (authError || !user) {
         const { data: { session } } = await supabase.auth.getSession()
         if (!session) {
@@ -15,52 +12,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // 2. Botón Volver al análisis
-    const btnVolver = document.getElementById('btn-volver')
-    if (btnVolver) {
-        btnVolver.addEventListener('click', () => {
-            window.location.href = '../analisis/analisistarifas.html'
-        })
-    }
-
-    // 3. Listeners para los selectores de simulación interactiva
-    const selectTarifaRival = document.getElementById('select-tarifa-rival')
-    const selectEstrategia = document.getElementById('select-estrategia')
-    const rangeIntensidad = document.getElementById('range-intensidad')
-
-    if (selectTarifaRival) selectTarifaRival.addEventListener('change', actualizarSimulacion)
-    if (selectEstrategia) selectEstrategia.addEventListener('change', actualizarSimulacion)
-    if (rangeIntensidad) rangeIntensidad.addEventListener('input', (e) => {
-        const valElem = document.getElementById('valor-intensidad');
-        if (valElem) valElem.textContent = `${e.target.value} €`;
-        actualizarSimulacion()
-    })
-
-    // 4. Capturar TODOS los parámetros pasados por URL desde analisistarifas.html
-    const urlParams = new URLSearchParams(window.location.search)
-    const suministro = urlParams.get('suministro')
-    const anio = urlParams.get('anio')
-    const periodo = urlParams.get('periodo') || 'todos'
-    tarifaPreseleccionadaUrl = urlParams.get('tarifa') // <-- Capturamos la tarifa si viene en la URL
-
-    // Opcional: Mostrar el alias o suministro actual
-    const aliasSuministro = sessionStorage.getItem('alias_suministro')
-    const elemTitulo = document.getElementById('titulo-suministro-actual')
-    if (elemTitulo && aliasSuministro) {
-        elemTitulo.textContent = aliasSuministro
-    }
+    const params = new URLSearchParams(window.location.search);
+    const suministro = params.get('suministro');
+    const anio = params.get('anio');
+    const periodo = params.get('periodo') || 'todos';
 
     if (!suministro || !anio) {
-        alert('No se han especificado el suministro o el año para la simulación.')
-        window.location.href = '../analisis/analisistarifas.html'
-        return
+        alert('Faltan parámetros de suministro o año.');
+        window.location.href = '../analisis/analisistarifas.html';
+        return;
     }
 
-    // 5. Lanzar el análisis automáticamente
-    await ejecutarAnalisisMejoraAutomatico(suministro, anio, periodo)
-})
+    // Recuperamos el alias guardado en sessionStorage (o usamos el CUPS por defecto si no existiera)
+    const aliasSuministro = sessionStorage.getItem('alias_suministro') || suministro;
 
-async function ejecutarAnalisisMejoraAutomatico(suministro, anio, periodo) {
+    // Renderizar el badge de contexto en dos filas claras
+    const contenedorBadge = document.getElementById('badge-contexto');
+    contenedorBadge.innerHTML = `
+        <div class="font-bold text-slate-900">📦 Suministro: <span class="text-indigo-600">${aliasSuministro}</span>
+        </div>
+        <div class="text-xs text-slate-500 flex gap-4">
+            <span>📅 Año: <strong class="text-slate-700">${anio}</strong></span>
+            <span>⏱️ Periodo: <strong class="text-slate-700">${periodo}</strong></span>
+        </div>
+    `;
+
+    document.getElementById('btn-volver').href = `../analisis/analisistarifas.html`;
+
     try {
         const { data, error } = await supabase.functions.invoke('analisis-tarifas', {
             body: { 
@@ -68,222 +46,246 @@ async function ejecutarAnalisisMejoraAutomatico(suministro, anio, periodo) {
                 anio: anio !== 'todos' ? parseInt(anio) : 'todos', 
                 periodo 
             }
-        })
+        });
 
-        if (error) throw error
-        if (!data || data.error) {
-            alert('Error en el análisis de mejora: ' + (data?.error || error.message))
-            return
-        }
+        if (error || !data || data.error) throw error || new Error(data?.error);
 
-        datosAnalisisGlobal = data
-
-        // Pintar resumen de energía y meses
-        pintarResumenEnergiaYMeses(data.resumen_energia)
-
-        // Poblamos el selector y autoseleccionamos si venía en la URL
-        poblarSelectorTarifasRivales(data.mercado, tarifaPreseleccionadaUrl)
-
-        actualizarSimulacion()
+        datosAnalisisGlobal = data;
+        inicializarSimulador(data);
 
     } catch (err) {
-        console.error('Error al invocar la Edge Function para mejora:', err)
-        alert('No se pudo cargar el análisis para la simulación.')
+        console.error('Error al cargar datos para la mejora:', err);
+        alert('No se pudieron recuperar los datos del suministro para simular.');
     }
-}
+});
 
-function pintarResumenEnergiaYMeses(resumenEnergia) {
-    const contenedor = document.getElementById('badge-contexto');
-    if (!contenedor) return;
+function inicializarSimulador(data) {
+    const { mercado } = data;
+    const selectRival = document.getElementById('select-tarifa-rival');
+    const rivales = mercado.filter(t => t.nombre?.trim().toLowerCase() !== 'renovacion');
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const anioUrl = urlParams.get('anio') || 'Todos los años';
-    const periodoUrl = urlParams.get('periodo') || 'todos';
+    selectRival.innerHTML = '<option value="" disabled selected>Selecciona una tarifa...</option>';
+    rivales.forEach((t, index) => {
+        const opt = document.createElement('option');
+        opt.value = index;
+        opt.textContent = `${t.nombre} (Coste Actual: ${t.coste_total.toFixed(2)} €)`;
+        selectRival.appendChild(opt);
+    });
 
-    let periodoTexto = 'Todos los periodos';
-    if (periodoUrl === 'alta') periodoTexto = 'Temporada Alta (May-Sep)';
-    if (periodoUrl === 'baja') periodoTexto = 'Temporada Baja (Oct-Abr)';
-
-    const aliasSuministro = sessionStorage.getItem('alias_suministro') || 'Suministro seleccionado';
-
-    contenedor.innerHTML = `
-        <div class="flex items-center justify-between">
-            <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Suministro</span>
-            <span class="text-base font-bold text-slate-900">${aliasSuministro}</span>
-        </div>
-        <div class="pt-2.5 border-t border-slate-100 mt-1.5 flex flex-col gap-1">
-            <div class="flex items-center justify-between">
-                <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Año</span>
-                <span class="text-xs font-bold text-slate-700">${anioUrl === 'todos' ? 'Todos los años' : anioUrl}</span>
-            </div>
-            <div class="flex items-center justify-between">
-                <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Periodo</span>
-                <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full">
-                    ${periodoTexto}
-                </span>
-            </div>
-        </div>
-    `;
-}
-
-function poblarSelectorTarifasRivales(mercado, tarifaUrl) {
-    const select = document.getElementById('select-tarifa-rival')
-    if (!select) return
-
-    select.innerHTML = '<option value="" disabled selected>Selecciona una tarifa a batir...</option>'
+    selectRival.addEventListener('change', ejecutarSimulacionMejora);
+    document.getElementById('select-estrategia').addEventListener('change', ejecutarSimulacionMejora);
     
-    let indexASelected = null;
+    const sliderIntensidad = document.getElementById('range-intensidad');
+    sliderIntensidad.addEventListener('input', (e) => {
+        document.getElementById('label-intensidad').textContent = `Margen objetivo: -${e.target.value} €`;
+        ejecutarSimulacionMejora();
+    });
+}
 
-    mercado.forEach((t, index) => {
-        const opt = document.createElement('option')
-        opt.value = index 
-        opt.textContent = `${t.nombre} (${t.coste_total.toFixed(2)} €)`
-        select.appendChild(opt)
+function mercadoFiltrado() {
+    return datosAnalisisGlobal.mercado.filter(t => t.nombre?.trim().toLowerCase() !== 'renovacion');
+}
 
-        if (tarifaUrl && (t.nombre.toLowerCase() === tarifaUrl.toLowerCase() || t.id == tarifaUrl)) {
-            indexASelected = index
+function ejecutarSimulacionMejora() {
+    const selectRivalIndex = document.getElementById('select-tarifa-rival').value;
+    if (selectRivalIndex === "") return;
+
+    const tarifaRival = mercadoFiltrado()[selectRivalIndex];
+    const tarifaRenovacion = datosAnalisisGlobal.tarifa_renovacion;
+    const estrategia = document.getElementById('select-estrategia').value;
+    const margenSeguridad = parseFloat(document.getElementById('range-intensidad').value);
+
+    // Coste objetivo a batir
+    const costeObjetivo = tarifaRenovacion.coste_total - margenSeguridad;
+    const costeActualRival = tarifaRival.coste_total;
+    const recorteNecesario = Math.max(0, costeActualRival - costeObjetivo);
+
+    document.getElementById('sim-coste-original').textContent = `${costeActualRival.toFixed(2)} €`;
+
+    // Factor de descuento proporcional necesario para conseguir el recorte
+    let factorDescuento = 0;
+    if (costeActualRival > 0 && recorteNecesario > 0) {
+        if (estrategia === 'mixta') {
+            factorDescuento = recorteNecesario / (tarifaRival.coste_energia + tarifaRival.coste_fijo);
+        } else if (estrategia === 'energia') {
+            factorDescuento = tarifaRival.coste_energia > 0 ? recorteNecesario / tarifaRival.coste_energia : 0;
+        } else if (estrategia === 'potencia') {
+            factorDescuento = tarifaRival.coste_fijo > 0 ? recorteNecesario / tarifaRival.coste_fijo : 0;
+        } else {
+            factorDescuento = recorteNecesario / (tarifaRival.coste_energia + tarifaRival.coste_fijo);
         }
-    })
-
-    if (indexASelected !== null) {
-        select.value = indexASelected
     }
-}
 
-function actualizarSimulacion() {
-    if (!datosAnalisisGlobal) return
+    // Limitamos el descuento máximo al 40%
+    factorDescuento = Math.min(0.40, Math.max(0, factorDescuento));
 
-    const selectRivalIndex = document.getElementById('select-tarifa-rival').value
-    if (selectRivalIndex === "") return
+    // Calculamos nuevo coste estimado
+    let ahorroCalculado = recorteNecesario;
+    let costeNuevoRival = costeActualRival - ahorroCalculado;
+    if (costeNuevoRival < 0) costeNuevoRival = 0;
 
-    const tarifaRival = datosAnalisisGlobal.mercado[selectRivalIndex]
-    const tarifaRenovacion = datosAnalisisGlobal.tarifa_renovacion
+    document.getElementById('sim-coste-nuevo').textContent = `${costeNuevoRival.toFixed(2)} €`;
     
-    // Validar el coste total de renovación de forma robusta (soporta 'coste_total' o 'coste')
-    const costeRenovacion = tarifaRenovacion ? (tarifaRenovacion.coste_total ?? tarifaRenovacion.coste ?? 0) : 0
+    const diferenciaRenovacion = costeNuevoRival - tarifaRenovacion.coste_total;
+    document.getElementById('sim-diferencia-renovacion').textContent = `(${diferenciaRenovacion <= 0 ? '' : '+'}${diferenciaRenovacion.toFixed(2)} € vs Renovación)`;
+    
+    const ahorroCliente = tarifaRenovacion.coste_total - costeNuevoRival;
+    document.getElementById('sim-ahorro-cliente').textContent = `${ahorroCliente.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 
-    const estrategia = document.getElementById('select-estrategia').value
-    const margenSeguridad = parseFloat(document.getElementById('range-intensidad').value) || 0
-
-    const costeActualRival = tarifaRival.coste_total
-    const costeObjetivo = costeRenovacion - margenSeguridad
-    const recorteNecesario = Math.max(0, costeActualRival - costeObjetivo)
-
-    let tarifaModificada = JSON.parse(JSON.stringify(tarifaRival))
-
-    if (estrategia === 'energia') {
-        const factor = tarifaRival.coste_energia > 0 ? Math.max(0, (tarifaRival.coste_energia - recorteNecesario) / tarifaRival.coste_energia) : 1
-        tarifaModificada.punta *= factor
-        tarifaModificada.llano *= factor
-        tarifaModificada.valle *= factor
-    } else if (estrategia === 'potencia') {
-        const factor = tarifaRival.coste_fijo > 0 ? Math.max(0, (tarifaRival.coste_fijo - recorteNecesario) / tarifaRival.coste_fijo) : 1
-        tarifaModificada.fijo_punta *= factor
-        tarifaModificada.fijo_valle *= factor
-    } else if (estrategia === 'excedentes') {
-        tarifaModificada.excedente += (recorteNecesario / (datosAnalisisGlobal.resumen_energia.excedentes || 1))
-    } else {
-        const totalBase = tarifaRival.coste_energia + tarifaRival.coste_fijo
-        const factor = totalBase > 0 ? Math.max(0, (totalBase - recorteNecesario) / totalBase) : 1
-        tarifaModificada.punta *= factor
-        tarifaModificada.llano *= factor
-        tarifaModificada.valle *= factor
-        tarifaModificada.fijo_punta *= factor
-        tarifaModificada.fijo_valle *= factor
-    }
-
-    const resumenEnergia = datosAnalisisGlobal.resumen_energia
-    const factorMeses = resumenEnergia.factor_meses || 12
-    const diasTotales = factorMeses * 30
-
-    const potPuntaKw = 4.5
-    const potValleKw = 5.5
-
-    const nuevoCosteFijo = (potPuntaKw * tarifaModificada.fijo_punta * diasTotales) + (potValleKw * tarifaModificada.fijo_valle * diasTotales)
-    const nuevoCosteEnergia = (resumenEnergia.punta * tarifaModificada.punta) + (resumenEnergia.llano * tarifaModificada.llano) + (resumenEnergia.valle * tarifaModificada.valle)
-    const nuevoCosteExcedentes = resumenEnergia.excedentes * tarifaModificada.excedente
-
-    const nuevoCosteTotal = nuevoCosteFijo + nuevoCosteEnergia - nuevoCosteExcedentes
-    const ahorroCliente = tarifaRival.coste_total - nuevoCosteTotal
-    const diferenciaRenovacion = nuevoCosteTotal - costeRenovacion
-    const ahorroConPrecioUsuario = costeRenovacion - nuevoCosteTotal
-
-    // Actualizar Tarjetas UI Principales
-    const elCosteOrig = document.getElementById('sim-coste-original')
-    const elCosteNuevo = document.getElementById('sim-coste-nuevo')
-    const elDiffRenov = document.getElementById('sim-diferencia-renovacion')
-    const elAhorroCl = document.getElementById('sim-ahorro-cliente')
-    const elAhorroUsuario = document.getElementById('sim-ahorro-usuario')
-    const elBadgeEstr = document.getElementById('badge-estrategia-aplicada')
-
-    if (elCosteOrig) elCosteOrig.textContent = `${costeActualRival.toFixed(2)} €`
-    if (elCosteNuevo) elCosteNuevo.textContent = `${nuevoCosteTotal.toFixed(2)} €`
-    if (elDiffRenov) elDiffRenov.textContent = `(${diferenciaRenovacion <= 0 ? '' : '+'}${diferenciaRenovacion.toFixed(2)} € vs Renovación)`
-    if (elAhorroCl) elAhorroCl.textContent = `${ahorroCliente.toFixed(2)} €`
-    if (elAhorroUsuario) elAhorroUsuario.textContent = `${ahorroConPrecioUsuario.toFixed(2)} €`
-    if (elBadgeEstr) elBadgeEstr.textContent = `Estrategia activa: ${estrategia.toUpperCase()}`
-
-    // Si tienes un elemento dedicado a mostrar el coste de renovación en pantalla, puedes actualizarlo así:
-    const elCosteRenovacionUI = document.getElementById('sim-coste-renovacion')
-    if (elCosteRenovacionUI) {
-        elCosteRenovacionUI.textContent = `${costeRenovacion.toFixed(2)} €`
-    }
-
-    renderizarTablasDetalladas(tarifaRival, tarifaModificada)
+    // Renderizar tablas detalladas (Energía, Potencia y Excedentes)
+    renderizarTablasDetalladas(tarifaRival, estrategia, factorDescuento);
 }
 
-function renderizarTablasDetalladas(original, modificado) {
-    const tbodyEnergia = document.getElementById('tabla-energia-detallada')
-    if (tbodyEnergia) {
-        const periodosEnergia = [
-            { nombre: 'Punta', orig: original.punta, mod: modificado.punta },
-            { nombre: 'Llano', orig: original.llano, mod: modificado.llano },
-            { nombre: 'Valle', orig: original.valle, mod: modificado.valle }
-        ]
-        tbodyEnergia.innerHTML = periodosEnergia.map(p => {
-            const diff = p.mod - p.orig
-            return `
-                <tr class="border-b border-slate-100 text-xs">
-                    <td class="py-2.5 px-4 font-medium text-slate-800">${p.nombre}</td>
-                    <td class="py-2.5 px-4 text-right text-slate-600">${p.orig.toFixed(7)} €</td>
-                    <td class="py-2.5 px-4 text-right text-slate-400">-</td>
-                    <td class="py-2.5 px-4 text-right font-bold text-indigo-600">${p.mod.toFixed(7)} €</td>
-                    <td class="py-2.5 px-4 text-right ${diff <= 0 ? 'text-emerald-600' : 'text-red-600'}">${diff <= 0 ? '' : '+'}${diff.toFixed(7)}</td>
-                </tr>
-            `
-        }).join('')
-    }
+function renderizarTablasDetalladas(tarifa, estrategia, factor) {
+    const tbodyEnergia = document.getElementById('tabla-energia-detallada');
+    const tbodyPotencia = document.getElementById('tabla-potencia-detallada');
+    const tbodyExcedentes = document.getElementById('tabla-excedentes-detallada');
+    
+    tbodyEnergia.innerHTML = '';
+    tbodyPotencia.innerHTML = '';
+    if (tbodyExcedentes) tbodyExcedentes.innerHTML = '';
 
-    const tbodyPotencia = document.getElementById('tabla-potencia-detallada')
-    if (tbodyPotencia) {
-        const diffPunta = modificado.fijo_punta - original.fijo_punta
-        const diffValle = modificado.fijo_valle - original.fijo_valle
-        tbodyPotencia.innerHTML = `
-            <tr>
-                <td class="py-2.5 px-4 font-medium">Punta (P1)</td>
-                <td class="py-2.5 px-4 text-right">${original.fijo_punta.toFixed(6)} €</td>
-                <td class="py-2.5 px-4 text-right font-bold text-indigo-600">${modificado.fijo_punta.toFixed(6)} €</td>
-                <td class="py-2.5 px-4 text-right ${diffPunta <= 0 ? 'text-emerald-600' : 'text-red-600'}">${diffPunta <= 0 ? '' : '+'}${diffPunta.toFixed(6)}</td>
-            </tr>
-            <tr>
-                <td class="py-2.5 px-4 font-medium">Valle (P2)</td>
-                <td class="py-2.5 px-4 text-right">${original.fijo_valle.toFixed(6)} €</td>
-                <td class="py-2.5 px-4 text-right font-bold text-indigo-600">${modificado.fijo_valle.toFixed(6)} €</td>
-                <td class="py-2.5 px-4 text-right ${diffValle <= 0 ? 'text-emerald-600' : 'text-red-600'}">${diffValle <= 0 ? '' : '+'}${diffValle.toFixed(6)}</td>
-            </tr>
-        `
-    }
+    document.getElementById('badge-estrategia-aplicada').textContent = `Estrategia: ${estrategia.toUpperCase()} (Ajuste ~${(factor * 100).toFixed(1)}%)`;
 
-    const tbodyExcedentes = document.getElementById('tabla-excedentes-detallada')
+    const aplicaEnergia = estrategia === 'mixta' || estrategia === 'energia';
+    const aplicaPotencia = estrategia === 'mixta' || estrategia === 'potencia';
+
+    // 1. Desglose de Energía
+    ['punta', 'llano', 'valle'].forEach(periodo => {
+        const precioActual = parseFloat(tarifa[periodo]) || 0; 
+        const rebaja = aplicaEnergia ? precioActual * factor : 0;
+        const precioNuevo = Math.max(0.0000001, precioActual - rebaja);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="py-2.5 px-4 font-medium uppercase text-slate-700">${periodo}</td>
+            <td class="py-2.5 px-4 text-right text-slate-600">${precioActual.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right">
+                <input type="number" step="0.0000001" data-tipo="energia" data-periodo="${periodo}" 
+                    value="${precioActual.toFixed(7)}" 
+                    class="input-usuario-precio w-28 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </td>
+            <td class="py-2.5 px-4 text-right font-bold text-indigo-700">${precioNuevo.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right text-emerald-600 font-semibold">-${(rebaja).toFixed(7)} €</td>
+        `;
+        tbodyEnergia.appendChild(tr);
+    });
+
+    // 2. Desglose de Potencia
+    const mapeoPotencia = [
+        { key: 'fijo_punta', label: 'p1' },
+        { key: 'fijo_valle', label: 'p2' }
+    ];
+
+    mapeoPotencia.forEach(item => {
+        const precioActual = parseFloat(tarifa[item.key]) || 0;
+        const rebaja = aplicaPotencia ? precioActual * factor : 0;
+        const precioNuevo = Math.max(0.0000001, precioActual - rebaja);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="py-2.5 px-4 font-medium uppercase text-slate-700">${item.label}</td>
+            <td class="py-2.5 px-4 text-right text-slate-600">${precioActual.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right">
+                <input type="number" step="0.0000001" data-tipo="potencia" data-periodo="${item.key}" 
+                    value="${precioActual.toFixed(7)}" 
+                    class="input-usuario-precio w-28 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </td>
+            <td class="py-2.5 px-4 text-right font-bold text-indigo-700">${precioNuevo.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right text-emerald-600 font-semibold">-${(rebaja).toFixed(7)} €</td>
+        `;
+        tbodyPotencia.appendChild(tr);
+    });
+
+    // 3. Desglose de Excedentes Solares (opcional si aplica)
     if (tbodyExcedentes) {
-        const diffExcedente = modificado.excedente - original.excedente
-        tbodyExcedentes.innerHTML = `
-            <tr>
-                <td class="py-2.5 px-4 font-medium">Compensación Solar</td>
-                <td class="py-2.5 px-4 text-right">${original.excedente.toFixed(5)} €</td>
-                <td class="py-2.5 px-4 text-right font-bold text-indigo-600">${modificado.excedente.toFixed(5)} €</td>
-                <td class="py-2.5 px-4 text-right text-emerald-600">+${diffExcedente.toFixed(5)}</td>
-            </tr>
-        `
+        const precioExcedenteActual = parseFloat(tarifa.excedente) || 0;
+        const aplicaExcedentes = estrategia === 'mixta' || estrategia === 'excedentes';
+        const mejoraExcedente = aplicaExcedentes ? precioExcedenteActual * (factor * 0.5) : 0;
+        const precioExcedenteNuevo = precioExcedenteActual + mejoraExcedente;
+
+        const trEx = document.createElement('tr');
+        trEx.innerHTML = `
+            <td class="py-2.5 px-4 font-medium uppercase text-slate-700">Excedentes Solares</td>
+            <td class="py-2.5 px-4 text-right text-slate-600">${precioExcedenteActual.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right">
+                <input type="number" step="0.0000001" data-tipo="excedente" data-periodo="excedente" 
+                    value="${precioExcedenteActual.toFixed(7)}" 
+                    class="input-usuario-precio w-28 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </td>
+            <td class="py-2.5 px-4 text-right font-bold text-emerald-700">${precioExcedenteNuevo.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right text-emerald-600 font-semibold">+${(mejoraExcedente).toFixed(7)} €</td>
+        `;
+        tbodyExcedentes.appendChild(trEx);
+    }
+
+    // Activar eventos en tiempo real para los nuevos inputs de precio de usuario
+    document.querySelectorAll('.input-usuario-precio').forEach(input => {
+        input.addEventListener('input', calcularCosteConPreciosUsuario);
+    });
+
+    // Calcular el valor inicial del usuario al renderizar
+    calcularCosteConPreciosUsuario();
+}
+
+function calcularCosteConPreciosUsuario() {
+    // Necesitamos recuperar los volúmenes de energía y potencia del análisis global
+    // (Asegúrate de que 'datosAnalisisGlobal' contenga los kWh consumidos y potencias contratadas si los guardas, 
+    // o puedes recalcularlos a partir de los costes actuales divididos por el precio base de la tarifa).
+    
+    // Alternativa limpia y directa basada en los inputs modificados y los totales actuales:
+    let inputs = document.querySelectorAll('.input-usuario-precio');
+    if (inputs.length === 0) return;
+
+    // Recogemos los valores introducidos por el usuario
+    let preciosUser = {};
+    inputs.forEach(input => {
+        let tipo = input.getAttribute('data-tipo');
+        let periodo = input.getAttribute('data-periodo');
+        if (!preciosUser[tipo]) preciosUser[tipo] = {};
+        preciosUser[tipo][periodo] = parseFloat(input.value) || 0;
+    });
+
+    // NOTA: Para computar el coste exacto con estos nuevos precios, 
+    // multiplicamos los kWh de cada periodo por el nuevo precio introducido por el usuario 
+    // + el coste fijo de potencia recalculado + restando excedentes.
+    // Si ya tienes los kwh guardados en alguna variable global al hacer el init (ej: datosAnalisisGlobal.resumen_energia), úsalos:
+    const kwh = datosAnalisisGlobal.resumen_energia || { punta: 0, llano: 0, valle: 0, excedentes: 0 };
+    
+    // Obtenemos potencias del usuario (si las tienes accesibles o puedes estimarlas de la tarifa seleccionada)
+    const selectRivalIndex = document.getElementById('select-tarifa-rival').value;
+    if (selectRivalIndex === "") return;
+    const tarifaRival = mercadoFiltrado()[selectRivalIndex];
+    const tarifaRenovacion = datosAnalisisGlobal.tarifa_renovacion;
+
+    // Cálculo del coste de energía con precios de usuario
+    let pEnergia = preciosUser['energia'] || {};
+    let costeEnergiaUser = (kwh.punta * (pEnergia.punta ?? 0)) +
+                           (kwh.llano * (pEnergia.llano ?? 0)) +
+                           (kwh.valle * (pEnergia.valle ?? 0));
+
+    // Cálculo del coste de potencia (asumiendo proporción fija o usando los fijos introducidos)
+    let pPotencia = preciosUser['potencia'] || {};
+    // Usamos la proporción original de costes fijos de la tarifa rival adaptada a los nuevos inputs
+    let proporcionFijoPunta = tarifaRival.fijo_punta > 0 ? (pPotencia.fijo_punta / tarifaRival.fijo_punta) : 1;
+    let proporcionFijoValle = tarifaRival.fijo_valle > 0 ? (pPotencia.fijo_valle / tarifaRival.fijo_valle) : 1;
+    let costeFijoUser = (tarifaRival.coste_fijo * ((proporcionFijoPunta + proporcionFijoValle) / 2));
+
+    // Excedentes
+    let pExcedente = preciosUser['excedente']?.excedente ?? tarifaRival.excedente;
+    let costeExcedentesUser = kwh.excedentes * pExcedente;
+
+    // Coste total resultante para el usuario
+    let costeTotalUser = costeEnergiaUser + costeFijoUser - costeExcedentesUser;
+    if (costeTotalUser < 0) costeTotalUser = 0;
+
+    // Ahorro resultante comparado con la tarifa "Renovación"
+    let ahorroUsuarioFinal = tarifaRenovacion.coste_total - costeTotalUser;
+
+    // Pintar en el DOM el nuevo indicador de ahorro con precios de usuario
+    const labelAhorroUser = document.getElementById('sim-ahorro-usuario');
+    if (labelAhorroUser) {
+        labelAhorroUser.textContent = `${ahorroUsuarioFinal.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+        labelAhorroUser.className = `text-lg font-bold ${ahorroUsuarioFinal >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
     }
 }
