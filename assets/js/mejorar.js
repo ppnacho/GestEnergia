@@ -100,15 +100,15 @@ function pintarResumenEnergiaYMeses(resumenEnergia) {
     const anioUrl = urlParams.get('anio') || 'Todos los años';
     const periodoUrl = urlParams.get('periodo') || 'todos';
 
-    // Formatear texto del periodo para que quede más elegante
-    let periodoTexto = 'Todos los periodos';
-    if (periodoUrl === 'alta') periodoTexto = 'Temporada Alta';
-    if (periodoUrl === 'baja') periodoTexto = 'Temporada Baja';
+    // Formatear texto del periodo
+    let periodoTexto = 'Año Completo';
+    if (periodoUrl === 'alta') periodoTexto = 'Temporada Alta (May-Sep)';
+    if (periodoUrl === 'baja') periodoTexto = 'Temporada Baja (Oct-Abr)';
 
-    // Recuperamos el nombre/alias del suministro (guardado previamente en session o del título)
+    // Recuperamos el nombre/alias del suministro
     const aliasSuministro = sessionStorage.getItem('alias_suministro') || 'Suministro seleccionado';
 
-    // Inyectamos las dos filas exactas que me indicas
+    // Inyectamos el diseño optimizado
     contenedor.innerHTML = `
         <!-- Fila 1: Nombre del suministro -->
         <div class="flex items-center justify-between">
@@ -116,16 +116,15 @@ function pintarResumenEnergiaYMeses(resumenEnergia) {
             <span class="text-base font-bold text-slate-900">${aliasSuministro}</span>
         </div>
 
-        <!-- Fila 2: Año y Periodo -->
-        <div class="flex items-center justify-between pt-2 border-t border-slate-100 mt-1">
-            <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Filtros Activos</span>
-            <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full">
-                Año: ${anioUrl} &bull; ${periodoTexto}
+        <!-- Fila 2: Año y Periodo abajo, limpio y fluido -->
+        <div class="flex items-center justify-between pt-2.5 border-t border-slate-100 mt-1.5">
+            <span class="text-xs text-slate-500 font-medium">Periodo analizado</span>
+            <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full">
+                📅 ${anioUrl === 'todos' ? 'Todos los años' : `Año ${anioUrl}`} &bull; ${periodoTexto}
             </span>
         </div>
     `;
 }
-
 function poblarSelectorTarifasRivales(mercado, tarifaUrl) {
     const select = document.getElementById('select-tarifa-rival')
     if (!select) return
