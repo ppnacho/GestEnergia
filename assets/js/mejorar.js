@@ -101,14 +101,14 @@ function pintarResumenEnergiaYMeses(resumenEnergia) {
     const periodoUrl = urlParams.get('periodo') || 'todos';
 
     // Formatear texto del periodo
-    let periodoTexto = 'Año Completo';
+    let periodoTexto = 'Todos los periodos';
     if (periodoUrl === 'alta') periodoTexto = 'Temporada Alta (May-Sep)';
     if (periodoUrl === 'baja') periodoTexto = 'Temporada Baja (Oct-Abr)';
 
     // Recuperamos el nombre/alias del suministro
     const aliasSuministro = sessionStorage.getItem('alias_suministro') || 'Suministro seleccionado';
 
-    // Inyectamos el diseño optimizado
+    // Inyectamos con salto de línea (bloque inferior dividido en dos niveles)
     contenedor.innerHTML = `
         <!-- Fila 1: Nombre del suministro -->
         <div class="flex items-center justify-between">
@@ -116,15 +116,22 @@ function pintarResumenEnergiaYMeses(resumenEnergia) {
             <span class="text-base font-bold text-slate-900">${aliasSuministro}</span>
         </div>
 
-        <!-- Fila 2: Año y Periodo abajo, limpio y fluido -->
-        <div class="flex items-center justify-between pt-2.5 border-t border-slate-100 mt-1.5">
-            <span class="text-xs text-slate-500 font-medium">Periodo analizado</span>
-            <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full">
-                📅 ${anioUrl === 'todos' ? 'Todos los años' : `Año ${anioUrl}`} &bull; ${periodoTexto}
-            </span>
+        <!-- Fila 2: Año y Periodos en formato vertical (con salto) -->
+        <div class="pt-2.5 border-t border-slate-100 mt-1.5 flex flex-col gap-1">
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Año</span>
+                <span class="text-xs font-bold text-slate-700">${anioUrl === 'todos' ? 'Todos los años' : anioUrl}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Periodo</span>
+                <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full">
+                    ${periodoTexto}
+                </span>
+            </div>
         </div>
     `;
 }
+
 function poblarSelectorTarifasRivales(mercado, tarifaUrl) {
     const select = document.getElementById('select-tarifa-rival')
     if (!select) return
