@@ -31,7 +31,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (selectTarifaRival) selectTarifaRival.addEventListener('change', actualizarSimulacion)
     if (selectEstrategia) selectEstrategia.addEventListener('change', actualizarSimulacion)
     if (rangeIntensidad) rangeIntensidad.addEventListener('input', (e) => {
-        document.getElementById('valor-intensidad').textContent = `${e.target.value} €`
+        const valElem = document.getElementById('valor-intensidad');
+        if (valElem) valElem.textContent = `${e.target.value} €`;
         actualizarSimulacion()
     })
 
@@ -77,7 +78,7 @@ async function ejecutarAnalisisMejoraAutomatico(suministro, anio, periodo) {
 
         datosAnalisisGlobal = data
 
-        // Pintar resumen de energía y meses (con 3 decimales)
+        // Pintar resumen de energía y meses
         pintarResumenEnergiaYMeses(data.resumen_energia)
 
         // Poblamos el selector y autoseleccionamos si venía en la URL
@@ -116,7 +117,7 @@ function pintarResumenEnergiaYMeses(resumenEnergia) {
             <span class="text-base font-bold text-slate-900">${aliasSuministro}</span>
         </div>
 
-        <!-- Fila 2: Año y Periodos en formato vertical (con salto) -->
+        <!-- Fila 2: Año y Periodos en formato vertical -->
         <div class="pt-2.5 border-t border-slate-100 mt-1.5 flex flex-col gap-1">
             <div class="flex items-center justify-between">
                 <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Año</span>
@@ -173,47 +174,123 @@ function actualizarSimulacion() {
     const costeObjetivo = tarifaRenovacion.coste_total - margenSeguridad
     const recorteNecesario = Math.max(0, costeActualRival - costeObjetivo)
 
+    // Clonamos la tarifa rival para modificar sus precios unitarios según la estrategia
+    let tarifaModificada = JSON.parse(JSON.stringify(tarifaRival))
+
+    // Aplicar ajustes según la estrategia seleccionada
+    if (estrategia === 'energia') {
+        const factor = tarifaRival.coste_energia > 0 ? Math.max(0, (tarifaRival.coste_energia - recorteNecesario) / tarifaRival.coste_energia) : 1
+        tarifaModificada.punta *= factor
+        tarifaModificada.llano *= factor
+        tarifaModificada.valle *= factor
+    } else if (estrategia === 'potencia') {
+        const factor = tarifaRival.coste_fijo > 0 ? Math.max(0, (tarifaRival.coste_fijo - recorteNecesario) / tarifaRival.coste_fijo) : 1
+        tarifaModificada.fijo_punta *= factor
+        tarifaModificada.fijo_valle *= factor
+    } else if (estrategia === 'excedentes') {
+        tarifaModificada.excedente += (recorteNecesario / (datosAnalisisGlobal.resumen_energia.excedentes || 1))
+    } else {
+        // Mixta: Repartir el recorte entre energía y potencia proporcionalmente
+        const totalBase = tarifaRival.coste_energia + tarifaRival.coste_fijo
+        const factor = totalBase > 0 ? Math.max(0, (totalBase - recorteNecesario) / totalBase) : 1
+        tarifaModificada.punta *= factor
+        tarifaModificada.llano *= factor
+        tarifaModificada.valle *= factor
+        tarifaModificada.fijo_punta *= factor
+        tarifaModificada.fijo_valle *= factor
+    }
+
+    // Recalcular costes finales con los precios modificados
+    const resumenEnergia = datosAnalisisGlobal.resumen_energia
+    const factorMeses = resumenEnergia.factor_meses || 12
+    const diasTotales = factorMeses * 30
+
+    const potPuntaKw = 4.5
+    const potValleKw = 5.5
+
+    const nuevoCosteFijo = (potPuntaKw * tarifaModificada.fijo_punta * diasTotales) + (potValleKw * tarifaModificada.fijo_valle * diasTotales)
+    const nuevoCosteEnergia = (resumenEnergia.punta * tarifaModificada.punta) + (resumenEnergia.llano * tarifaModificada.llano) + (resumenEnergia.valle * tarifaModificada.valle)
+    const nuevoCosteExcedentes = resumenEnergia.excedentes * tarifaModificada.excedente
+
+    const nuevoCosteTotal = nuevoCosteFijo + nuevoCosteEnergia - nuevoCosteExcedentes
+    const ahorroCliente = tarifaRival.coste_total - nuevoCosteTotal
+    const diferenciaRenovacion = nuevoCosteTotal - tarifaRenovacion.coste_total
+    const ahorroConPrecioUsuario = tarifaRenovacion.coste_total - nuevoCosteTotal
+
+    // Actualizar Tarjetas UI Principales
     const elCosteOrig = document.getElementById('sim-coste-original')
     const elCosteNuevo = document.getElementById('sim-coste-nuevo')
     const elDiffRenov = document.getElementById('sim-diferencia-renovacion')
     const elAhorroCl = document.getElementById('sim-ahorro-cliente')
+    const elAhorroUsuario = document.getElementById('sim-ahorro-usuario')
     const elBadgeEstr = document.getElementById('badge-estrategia-aplicada')
 
     if (elCosteOrig) elCosteOrig.textContent = `${costeActualRival.toFixed(2)} €`
+    if (elCosteNuevo) elCosteNuevo.textContent = `${nuevoCosteTotal.toFixed(2)} €`
+    if (elDiffRenov) elDiffRenov.textContent = `(${diferenciaRenovacion <= 0 ? '' : '+'}${diferenciaRenovacion.toFixed(2)} € vs Renovación)`
+    if (elAhorroCl) elAhorroCl.textContent = `${ahorroCliente.toFixed(2)} €`
+    if (elAhorroUsuario) elAhorroUsuario.textContent = `${ahorroConPrecioUsuario.toFixed(2)} €`
+    if (elBadgeEstr) elBadgeEstr.textContent = `Estrategia activa: ${estrategia.toUpperCase()}`
 
-    let factorDescuento = 0
-    const totalEnergiaYFijo = tarifaRival.coste_energia + tarifaRival.coste_fijo
+    // Rellenar las tablas detalladas de precios unitarios
+    renderizarTablasDetalladas(tarifaRival, tarifaModificada)
+}
 
-    if (costeActualRival > 0 && recorteNecesario > 0 && totalEnergiaYFijo > 0) {
-        if (estrategia === 'mixta') {
-            factorDescuento = recorteNecesario / totalEnergiaYFijo
-        } else if (estrategia === 'energia') {
-            factorDescuento = tarifaRival.coste_energia > 0 ? recorteNecesario / tarifaRival.coste_energia : 0
-        } else if (estrategia === 'potencia') {
-            factorDescuento = tarifaRival.coste_fijo > 0 ? recorteNecesario / tarifaRival.coste_fijo : 0
-        } else {
-            factorDescuento = recorteNecesario / totalEnergiaYFijo
-        }
+function renderizarTablasDetalladas(original, modificado) {
+    // 1. Tabla Energía (€/kWh con 7 decimales)
+    const tbodyEnergia = document.getElementById('tabla-energia-detallada')
+    if (tbodyEnergia) {
+        const periodosEnergia = [
+            { nombre: 'Punta', orig: original.punta, mod: modificado.punta },
+            { nombre: 'Llano', orig: original.llano, mod: modificado.llano },
+            { nombre: 'Valle', orig: original.valle, mod: modificado.valle }
+        ]
+        tbodyEnergia.innerHTML = periodosEnergia.map(p => {
+            const diff = p.mod - p.orig
+            return `
+                <tr class="border-b border-slate-100 text-xs">
+                    <td class="py-2.5 px-4 font-medium text-slate-800">${p.nombre}</td>
+                    <td class="py-2.5 px-4 text-right text-slate-600">${p.orig.toFixed(7)} €</td>
+                    <td class="py-2.5 px-4 text-right text-slate-400">-</td>
+                    <td class="py-2.5 px-4 text-right font-bold text-indigo-600">${p.mod.toFixed(7)} €</td>
+                    <td class="py-2.5 px-4 text-right ${diff <= 0 ? 'text-emerald-600' : 'text-red-600'}">${diff <= 0 ? '' : '+'}${diff.toFixed(7)}</td>
+                </tr>
+            `
+        }).join('')
     }
 
-    factorDescuento = Math.min(0.50, Math.max(0, factorDescuento))
-
-    let costeNuevoRival = costeActualRival - recorteNecesario
-    if (costeNuevoRival < 0) costeNuevoRival = 0
-
-    if (elCosteNuevo) elCosteNuevo.textContent = `${costeNuevoRival.toFixed(2)} €`
-    
-    const diferenciaRenovacion = costeNuevoRival - tarifaRenovacion.coste_total
-    if (elDiffRenov) {
-        elDiffRenov.textContent = `(${diferenciaRenovacion <= 0 ? '' : '+'}${diferenciaRenovacion.toFixed(2)} € vs Renovación)`
+    // 2. Tabla Potencia (€/kW·día)
+    const tbodyPotencia = document.getElementById('tabla-potencia-detallada')
+    if (tbodyPotencia) {
+        const diffPunta = modificado.fijo_punta - original.fijo_punta
+        const diffValle = modificado.fijo_valle - original.fijo_valle
+        tbodyPotencia.innerHTML = `
+            <tr>
+                <td class="py-2.5 px-4 font-medium">Punta (P1)</td>
+                <td class="py-2.5 px-4 text-right">${original.fijo_punta.toFixed(6)} €</td>
+                <td class="py-2.5 px-4 text-right font-bold text-indigo-600">${modificado.fijo_punta.toFixed(6)} €</td>
+                <td class="py-2.5 px-4 text-right ${diffPunta <= 0 ? 'text-emerald-600' : 'text-red-600'}">${diffPunta <= 0 ? '' : '+'}${diffPunta.toFixed(6)}</td>
+            </tr>
+            <tr>
+                <td class="py-2.5 px-4 font-medium">Valle (P2)</td>
+                <td class="py-2.5 px-4 text-right">${original.fijo_valle.toFixed(6)} €</td>
+                <td class="py-2.5 px-4 text-right font-bold text-indigo-600">${modificado.fijo_valle.toFixed(6)} €</td>
+                <td class="py-2.5 px-4 text-right ${diffValle <= 0 ? 'text-emerald-600' : 'text-red-600'}">${diffValle <= 0 ? '' : '+'}${diffValle.toFixed(6)}</td>
+            </tr>
+        `
     }
-    
-    const ahorroCliente = tarifaRenovacion.coste_total - costeNuevoRival
-    if (elAhorroCl) {
-        elAhorroCl.textContent = `${ahorroCliente.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
-    }
 
-    if (elBadgeEstr) {
-        elBadgeEstr.textContent = `Estrategia: ${estrategia.toUpperCase()} (Ajuste ~${(factorDescuento * 100).toFixed(1)}%)`
+    // 3. Tabla Excedentes (€/kWh)
+    const tbodyExcedentes = document.getElementById('tabla-excedentes-detallada')
+    if (tbodyExcedentes) {
+        const diffExcedente = modificado.excedente - original.excedente
+        tbodyExcedentes.innerHTML = `
+            <tr>
+                <td class="py-2.5 px-4 font-medium">Compensación Solar</td>
+                <td class="py-2.5 px-4 text-right">${original.excedente.toFixed(5)} €</td>
+                <td class="py-2.5 px-4 text-right font-bold text-indigo-600">${modificado.excedente.toFixed(5)} €</td>
+                <td class="py-2.5 px-4 text-right text-emerald-600">+${diffExcedente.toFixed(5)}</td>
+            </tr>
+        `
     }
 }
