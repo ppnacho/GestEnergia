@@ -92,27 +92,38 @@ async function ejecutarAnalisisMejoraAutomatico(suministro, anio, periodo) {
 }
 
 function pintarResumenEnergiaYMeses(resumenEnergia) {
-    if (!resumenEnergia) return
+    const contenedor = document.getElementById('badge-contexto');
+    if (!contenedor) return;
 
-    const badgeMeses = document.getElementById('resumen-meses-badge')
-    if (badgeMeses) {
-        badgeMeses.textContent = `${resumenEnergia.factor_meses} meses`
-    }
+    // Recuperamos los parámetros directamente de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const anioUrl = urlParams.get('anio') || 'Todos los años';
+    const periodoUrl = urlParams.get('periodo') || 'todos';
 
-    const formato3Dec = (valor) => (valor || 0).toLocaleString('es-ES', { 
-        minimumFractionDigits: 3, 
-        maximumFractionDigits: 3 
-    })
+    // Formatear texto del periodo para que quede más elegante
+    let periodoTexto = 'Todos los periodos';
+    if (periodoUrl === 'alta') periodoTexto = 'Temporada Alta';
+    if (periodoUrl === 'baja') periodoTexto = 'Temporada Baja';
 
-    const elPunta = document.getElementById('kwh-punta')
-    const elLlano = document.getElementById('kwh-llano')
-    const elValle = document.getElementById('kwh-valle')
-    const elExcedentes = document.getElementById('kwh-excedentes')
+    // Recuperamos el nombre/alias del suministro (guardado previamente en session o del título)
+    const aliasSuministro = sessionStorage.getItem('alias_suministro') || 'Suministro seleccionado';
 
-    if (elPunta) elPunta.textContent = `${formato3Dec(resumenEnergia.punta)} kWh`
-    if (elLlano) elLlano.textContent = `${formato3Dec(resumenEnergia.llano)} kWh`
-    if (elValle) elValle.textContent = `${formato3Dec(resumenEnergia.valle)} kWh`
-    if (elExcedentes) elExcedentes.textContent = `${formato3Dec(resumenEnergia.excedentes)} kWh`
+    // Inyectamos las dos filas exactas que me indicas
+    contenedor.innerHTML = `
+        <!-- Fila 1: Nombre del suministro -->
+        <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Suministro</span>
+            <span class="text-base font-bold text-slate-900">${aliasSuministro}</span>
+        </div>
+
+        <!-- Fila 2: Año y Periodo -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100 mt-1">
+            <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Filtros Activos</span>
+            <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full">
+                Año: ${anioUrl} &bull; ${periodoTexto}
+            </span>
+        </div>
+    `;
 }
 
 function poblarSelectorTarifasRivales(mercado, tarifaUrl) {
