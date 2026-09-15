@@ -19,12 +19,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (!suministro || !anio) {
         alert('Faltan parámetros de suministro o año.');
-        window.location.href = '../analisistarifas.html';
+        window.location.href = '../analisis/analisistarifas.html';
         return;
     }
 
     document.getElementById('badge-contexto').textContent = `CUPS: ${suministro} | Año: ${anio} | Periodo: ${periodo}`;
-    document.getElementById('btn-volver').href = `../analisistarifas.html`;
+    document.getElementById('btn-volver').href = `../analisis/analisistarifas.html`;
 
     try {
         const { data, error } = await supabase.functions.invoke('analisis-tarifas', {
