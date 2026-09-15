@@ -23,7 +23,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    document.getElementById('badge-contexto').textContent = `CUPS: ${suministro} | Año: ${anio} | Periodo: ${periodo}`;
+    // Renderizar el badge de contexto en dos filas claras según lo solicitado
+    const contenedorBadge = document.getElementById('badge-contexto');
+    contenedorBadge.innerHTML = `
+        <div class="font-bold text-slate-900">📦 Suministro: <span class="text-indigo-600">${suministro}</span></div>
+        <div class="text-xs text-slate-500 flex gap-4">
+            <span>📅 Año: <strong class="text-slate-700">${anio}</strong></span>
+            <span>⏱️ Periodo: <strong class="text-slate-700">${periodo}</strong></span>
+        </div>
+    `;
+
     document.getElementById('btn-volver').href = `../analisis/analisistarifas.html`;
 
     try {
@@ -82,7 +91,7 @@ function ejecutarSimulacionMejora() {
     const estrategia = document.getElementById('select-estrategia').value;
     const margenSeguridad = parseFloat(document.getElementById('range-intensidad').value);
 
-    // Coste objetivo a batir
+    // Coste objetivo a batir (ahora el margen llega hasta 20€)
     const costeObjetivo = tarifaRenovacion.coste_total - margenSeguridad;
     const costeActualRival = tarifaRival.coste_total;
     const recorteNecesario = Math.max(0, costeActualRival - costeObjetivo);
@@ -90,7 +99,6 @@ function ejecutarSimulacionMejora() {
     document.getElementById('sim-coste-original').textContent = `${costeActualRival.toFixed(2)} €`;
 
     // Factor de descuento proporcional necesario para conseguir el recorte
-    // Evitamos división por cero si el coste actual es 0
     let factorDescuento = 0;
     if (costeActualRival > 0 && recorteNecesario > 0) {
         if (estrategia === 'mixta') {
@@ -120,27 +128,27 @@ function ejecutarSimulacionMejora() {
     const ahorroCliente = tarifaRenovacion.coste_total - costeNuevoRival;
     document.getElementById('sim-ahorro-cliente').textContent = `${ahorroCliente.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 
-    // Renderizar tablas detalladas de precios unitarios
+    // Renderizar tablas detalladas de precios unitarios (incluyendo excedentes)
     renderizarTablasDetalladas(tarifaRival, estrategia, factorDescuento);
 }
 
 function renderizarTablasDetalladas(tarifa, estrategia, factor) {
     const tbodyEnergia = document.getElementById('tabla-energia-detallada');
     const tbodyPotencia = document.getElementById('tabla-potencia-detallada');
+    const tbodyExcedentes = document.getElementById('tabla-excedentes-detallada');
+    
     tbodyEnergia.innerHTML = '';
     tbodyPotencia.innerHTML = '';
+    if (tbodyExcedentes) tbodyExcedentes.innerHTML = '';
 
     document.getElementById('badge-estrategia-aplicada').textContent = `Estrategia: ${estrategia.toUpperCase()} (Ajuste ~${(factor * 100).toFixed(1)}%)`;
 
-    // 1. Desglose de Energía (Punta, Llano, Valle si existen en los precios de la tarifa)
-    // Supongamos que la tarifa trae un objeto de precios unitarios o los simulamos de forma proporcional
+    // 1. Desglose de Energía (Punta, Llano, Valle)
     const preciosEnergiaActual = tarifa.precios_energia || { punta: 0.15, llano: 0.12, valle: 0.09 }; 
-    // Nota: Si tu estructura de objeto guarda los precios unitarios en otro campo, ajústalo aquí. 
-    // Vamos a aplicar el factor según la estrategia elegida:
     const aplicaEnergia = estrategia === 'mixta' || estrategia === 'energia';
 
     ['punta', 'llano', 'valle'].forEach(periodo => {
-        const precioActual = preciosEnergiaActual[periodo] || 0.12; // Valor por defecto orientativo si no viene desglosado
+        const precioActual = preciosEnergiaActual[periodo] || 0.12; 
         const rebaja = aplicaEnergia ? precioActual * factor : 0;
         const precioNuevo = Math.max(0.01, precioActual - rebaja);
 
@@ -172,4 +180,22 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
         `;
         tbodyPotencia.appendChild(tr);
     });
+
+    // 3. Desglose de Excedentes Solares
+    if (tbodyExcedentes) {
+        const precioExcedenteActual = tarifa.precio_excedentes || 0.05;
+        const aplicaExcedentes = estrategia === 'mixta' || estrategia === 'excedentes';
+        // En excedentes, una mejora para el cliente significa incrementar el precio al que se le compensa
+        const mejoraExcedente = aplicaExcedentes ? precioExcedenteActual * (factor * 0.5) : 0;
+        const precioExcedenteNuevo = precioExcedenteActual + mejoraExcedente;
+
+        const trEx = document.createElement('tr');
+        trEx.innerHTML = `
+            <td class="py-2.5 px-4 font-medium uppercase text-slate-700">Excedentes Solares</td>
+            <td class="py-2.5 px-4 text-right text-slate-600">${precioExcedenteActual.toFixed(5)} €</td>
+            <td class="py-2.5 px-4 text-right font-bold text-emerald-700">${precioExcedenteNuevo.toFixed(5)} €</td>
+            <td class="py-2.5 px-4 text-right text-emerald-600 font-semibold">+${(mejoraExcedente).toFixed(5)} € (Bonus)</td>
+        `;
+        tbodyExcedentes.appendChild(trEx);
+    }
 }
