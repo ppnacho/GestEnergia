@@ -14,12 +14,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Botón de Cerrar Sesión
-    document.getElementById('btn-logout').addEventListener('click', async () => {
-        await supabase.auth.signOut()
-        window.location.href = '../index.html'
-    })
-
     // Listeners para los selectores de simulación
     const selectTarifaRival = document.getElementById('select-tarifa-rival')
     const selectEstrategia = document.getElementById('select-estrategia')
