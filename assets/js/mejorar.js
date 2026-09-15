@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient.js';
 let datosAnalisisGlobal = null; // Almacenará la respuesta limpia de la Edge Function
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Validación de sesión
+    // 1. Validación de sesión
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
@@ -12,17 +12,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.location.href = '../index.html'
             return
         }
-    } // <-- Aquí se cierra correctamente el if de autenticación
+    }
 
-    // Botón Volver al análisis (ahora está fuera y se ejecuta siempre)
+    // 2. Botón Volver al análisis
     const btnVolver = document.getElementById('btn-volver')
     if (btnVolver) {
         btnVolver.addEventListener('click', () => {
             window.location.href = '../analisis/analisistarifas.html'
         })
     }
-})
-    // Listeners para los selectores de simulación
+
+    // 3. Listeners para los selectores de simulación interactiva
     const selectTarifaRival = document.getElementById('select-tarifa-rival')
     const selectEstrategia = document.getElementById('select-estrategia')
     const rangeIntensidad = document.getElementById('range-intensidad')
@@ -34,116 +34,43 @@ document.addEventListener('DOMContentLoaded', async () => {
         actualizarSimulacion()
     })
 
-    // Carga inicial de filtros y datos
-    await cargarFiltrosIniciales()
+    // 4. Capturar los parámetros pasados por URL desde analisistarifas.html
+    const urlParams = new URLSearchParams(window.location.search)
+    const suministro = urlParams.get('suministro')
+    const anio = urlParams.get('anio')
+    const periodo = urlParams.get('periodo') || 'todos'
+
+    // Opcional: Mostrar el alias o suministro actual si tienes un elemento para ello
+    const aliasSuministro = sessionStorage.getItem('alias_suministro')
+    const elemTitulo = document.getElementById('titulo-suministro-actual')
+    if (elemTitulo && aliasSuministro) {
+        elemTitulo.textContent = aliasSuministro
+    }
+
+    if (!suministro || !anio) {
+        alert('No se han especificado el suministro o el año para la simulación.')
+        window.location.href = '../analisis/analisistarifas.html'
+        return
+    }
+
+    // 5. Lanzar el análisis automáticamente con los datos heredados
+    await ejecutarAnalisisMejoraAutomatico(suministro, anio, periodo)
 })
 
-// Solicita los suministros iniciales a la Edge Function
-async function cargarFiltrosIniciales() {
-    try {
-        const { data, error } = await supabase.functions.invoke('analisis-tarifas', {
-            body: { action: 'init' }
-        })
-
-        if (error || !data || data.error) {
-            console.error('Error al inicializar filtros:', error || data?.error)
-            return
-        }
-
-        const { suministros, alias } = data.usuario
-        const selectSuministro = document.getElementById('select-suministro')
-        
-        if (!selectSuministro) return
-
-        selectSuministro.innerHTML = '<option value="" disabled selected>Selecciona suministro...</option>'
-        
-        suministros.forEach((cups, index) => {
-            const nomAlias = alias && alias[index] ? alias[index] : `Suministro ${index + 1}`
-            const option = document.createElement('option')
-            option.value = cups
-            option.textContent = nomAlias
-            selectSuministro.appendChild(option)
-        })
-
-        selectSuministro.addEventListener('change', async () => {
-            const suministroVal = selectSuministro.value;
-            if (!suministroVal) return;
-            
-            // Cargar años disponibles para este suministro
-            await cargarAniosSuministro(suministroVal);
-            await ejecutarAnalisisMejora();
-        })
-
-        const selectAnio = document.getElementById('select-anio')
-        if (selectAnio) {
-            selectAnio.addEventListener('change', ejecutarAnalisisMejora)
-        }
-
-        document.querySelectorAll('.tab-periodo').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.tab-periodo').forEach(b => {
-                    b.classList.remove('bg-white', 'text-emerald-700', 'shadow-sm', 'font-semibold');
-                    b.classList.add('text-slate-600', 'font-medium');
-                });
-                e.target.classList.add('bg-white', 'text-emerald-700', 'shadow-sm', 'font-semibold');
-                e.target.classList.remove('text-slate-600', 'font-medium');
-                
-                ejecutarAnalisisMejora();
-            });
-        });
-
-    } catch (err) {
-        console.error('Error en cargarFiltrosIniciales:', err)
-    }
-}
-
-async function cargarAniosSuministro(suministro) {
-    try {
-        const { data, error } = await supabase.functions.invoke('analisis-tarifas', {
-            body: { action: 'anios', suministro }
-        })
-
-        if (error || !data) return
-
-        const selectAnio = document.getElementById('select-anio')
-        if (!selectAnio) return
-
-        selectAnio.innerHTML = '<option value="todos">Todos los años</option>'
-        data.anios.forEach(anio => {
-            const opt = document.createElement('option')
-            opt.value = anio
-            opt.textContent = anio
-            selectAnio.appendChild(opt)
-        })
-        selectAnio.disabled = false;
-    } catch (err) {
-        console.error('Error al cargar años:', err)
-    }
-}
-
-// Ejecuta la llamada a la Edge Function para obtener el análisis completo
-async function ejecutarAnalisisMejora() {
-    const suministro = document.getElementById('select-suministro').value
-    const selectAnio = document.getElementById('select-anio')
-    const anio = selectAnio ? selectAnio.value : 'todos'
-    
-    const tabActiva = document.querySelector('.tab-periodo.bg-white')
-    const periodo = tabActiva ? tabActiva.getAttribute('data-periodo') : 'todos'
-
-    if (!suministro) return
-
+// Ejecuta la llamada a la Edge Function de forma automática con los parámetros de la URL
+async function ejecutarAnalisisMejoraAutomatico(suministro, anio, periodo) {
     try {
         const { data, error } = await supabase.functions.invoke('analisis-tarifas', {
             body: { 
                 suministro, 
-                anio: (anio && anio !== 'todos') ? parseInt(anio) : 'todos', 
+                anio: anio !== 'todos' ? parseInt(anio) : 'todos', 
                 periodo 
             }
         })
 
         if (error) throw error
         if (!data || data.error) {
-            alert('Error en el análisis: ' + (data?.error || error.message))
+            alert('Error en el análisis de mejora: ' + (data?.error || error.message))
             return
         }
 
@@ -158,6 +85,7 @@ async function ejecutarAnalisisMejora() {
 
     } catch (err) {
         console.error('Error al invocar la Edge Function para mejora:', err)
+        alert('No se pudo cargar el análisis para la simulación.')
     }
 }
 
