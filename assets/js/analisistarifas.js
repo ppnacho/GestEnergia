@@ -93,6 +93,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        // CAPTURAR EL NOMBRE AMIGABLE (ALIAS) DEL SELECTOR ACTUAL
+        const aliasSuministro = selectSuministro.options[selectSuministro.selectedIndex].text;
+
+        // GUARDARLO EN EL SESSIONSTORAGE PARA QUE MEJORAR.HTML LO LEA
+        sessionStorage.setItem('alias_suministro', aliasSuministro);
+
         // Redirigir a la página de mejora pasando los parámetros en la URL
         window.location.href = `../analisis/mejorar.html?suministro=${encodeURIComponent(suministro)}&anio=${encodeURIComponent(anio)}&periodo=${encodeURIComponent(periodo)}`;
     });
