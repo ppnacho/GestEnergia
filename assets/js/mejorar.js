@@ -12,6 +12,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.location.href = '../index.html'
             return
         }
+
+    // Botón Volver al análisis (protegido por si cambia el ID en el HTML)
+    const btnVolver = document.getElementById('btn-volver');
+    if (btnVolver) {
+        btnVolver.addEventListener('click', () => {
+            window.location.href = '../analisis/analisistarifas.html'; // O la ruta correspondiente a tu página de análisis
+        });
+    }
     }
 
     // Listeners para los selectores de simulación
