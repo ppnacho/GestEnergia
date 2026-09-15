@@ -106,6 +106,10 @@
                     <span class="text-xs text-emerald-800 font-semibold block">Ahorro Anual para el Cliente</span>
                     <span id="sim-ahorro-cliente" class="text-2xl font-extrabold text-emerald-700 mt-1 block">0,00 €</span>
                 </div>
+                <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
+                    <span class="text-sm font-medium text-slate-600">Ahorro Anual con Precio Usuario:</span>
+                    <span id="sim-ahorro-usuario" class="text-lg font-bold text-emerald-600">0,00 €</span>
+                </div>
             </div>
 
             <!-- Desglose Detallado de Precios Unitarios (El núcleo de la contraoferta) -->
@@ -121,18 +125,19 @@
                         <span>⚡ Término de Energía (Precios en €/kWh)</span>
                     </h5>
                     <div class="overflow-x-auto rounded-xl border border-slate-200">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
-                                <tr>
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b text-xs uppercase text-slate-500 bg-slate-50">
                                     <th class="py-2.5 px-4">Periodo</th>
-                                    <th class="py-2.5 px-4 text-right">Precio Actual (€/kWh)</th>
-                                    <th class="py-2.5 px-4 text-right">Precio Propuesto (€/kWh)</th>
-                                    <th class="py-2.5 px-4 text-right">Diferencia / Descuento</th>
+                                    <th class="py-2.5 px-4 text-right">Precio Tarifa</th>
+                                    <th class="py-2.5 px-4 text-right">Precio Usuario</th> <!-- 👈 NUEVA COLUMNA -->
+                                    <th class="py-2.5 px-4 text-right">Precio Nuevo</th>
+                                    <th class="py-2.5 px-4 text-right">Diferencia</th>
                                 </tr>
                             </thead>
-                            <tbody id="tabla-energia-detallada" class="divide-y divide-slate-100">
-                                <!-- Inyectado por JS -->
-                            </tbody>
+                            <tbody id="tabla-energia-detallada">
+                                <!-- Las filas se inyectan dinámicamente desde el JS -->
+                                </tbody>
                         </table>
                     </div>
                 </div>
