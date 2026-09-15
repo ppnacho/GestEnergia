@@ -147,14 +147,13 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
 
     document.getElementById('badge-estrategia-aplicada').textContent = `Estrategia: ${estrategia.toUpperCase()} (Ajuste ~${(factor * 100).toFixed(1)}%)`;
 
-    // 1. Desglose de Energía
-    const preciosEnergiaActual = tarifa.precios_energia || { punta: 0.15, llano: 0.12, valle: 0.09 }; 
+    // 1. Desglose de Energía (leyendo los campos reales: punta, llano, valle)
     const aplicaEnergia = estrategia === 'mixta' || estrategia === 'energia';
 
     ['punta', 'llano', 'valle'].forEach(periodo => {
-        const precioActual = preciosEnergiaActual[periodo] || 0.12; 
+        const precioActual = parseFloat(tarifa[periodo]) || 0; 
         const rebaja = aplicaEnergia ? precioActual * factor : 0;
-        const precioNuevo = Math.max(0.01, precioActual - rebaja);
+        const precioNuevo = Math.max(0.00001, precioActual - rebaja);
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -166,18 +165,21 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
         tbodyEnergia.appendChild(tr);
     });
 
-    // 2. Desglose de Potencia
-    const preciosPotenciaActual = tarifa.precios_potencia || { p1: 0.08, p2: 0.04 };
+    // 2. Desglose de Potencia (leyendo los campos reales: fijo_punta y fijo_valle)
     const aplicaPotencia = estrategia === 'mixta' || estrategia === 'potencia';
+    const mapeoPotencia = [
+        { key: 'fijo_punta', label: 'p1' },
+        { key: 'fijo_valle', label: 'p2' }
+    ];
 
-    ['p1', 'p2'].forEach(periodo => {
-        const precioActual = preciosPotenciaActual[periodo] || 0.06;
+    mapeoPotencia.forEach(item => {
+        const precioActual = parseFloat(tarifa[item.key]) || 0;
         const rebaja = aplicaPotencia ? precioActual * factor : 0;
-        const precioNuevo = Math.max(0.005, precioActual - rebaja);
+        const precioNuevo = Math.max(0.00001, precioActual - rebaja);
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td class="py-2.5 px-4 font-medium uppercase text-slate-700">${periodo}</td>
+            <td class="py-2.5 px-4 font-medium uppercase text-slate-700">${item.label}</td>
             <td class="py-2.5 px-4 text-right text-slate-600">${precioActual.toFixed(5)} €</td>
             <td class="py-2.5 px-4 text-right font-bold text-indigo-700">${precioNuevo.toFixed(5)} €</td>
             <td class="py-2.5 px-4 text-right text-emerald-600 font-semibold">-${(rebaja).toFixed(5)} €</td>
@@ -185,9 +187,9 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
         tbodyPotencia.appendChild(tr);
     });
 
-    // 3. Desglose de Excedentes Solares
+    // 3. Desglose de Excedentes Solares (leyendo el campo real: excedente)
     if (tbodyExcedentes) {
-        const precioExcedenteActual = tarifa.precio_excedentes || 0.05;
+        const precioExcedenteActual = parseFloat(tarifa.excedente) || 0;
         const aplicaExcedentes = estrategia === 'mixta' || estrategia === 'excedentes';
         const mejoraExcedente = aplicaExcedentes ? precioExcedenteActual * (factor * 0.5) : 0;
         const precioExcedenteNuevo = precioExcedenteActual + mejoraExcedente;
