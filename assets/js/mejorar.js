@@ -29,7 +29,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Renderizar el badge de contexto en dos filas claras
     const contenedorBadge = document.getElementById('badge-contexto');
     contenedorBadge.innerHTML = `
-        <div class="font-bold text-slate-900">📦 Suministro: <span class="text-indigo-600">${aliasSuministro}</span> <span class="text-xs font-normal text-slate-400">(${suministro})</span></div>
+        <div class="font-bold text-slate-900">📦 Suministro: <span class="text-indigo-600">${aliasSuministro}</span>
+        </div>
         <div class="text-xs text-slate-500 flex gap-4">
             <span>📅 Año: <strong class="text-slate-700">${anio}</strong></span>
             <span>⏱️ Periodo: <strong class="text-slate-700">${periodo}</strong></span>
