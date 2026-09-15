@@ -147,26 +147,31 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
 
     document.getElementById('badge-estrategia-aplicada').textContent = `Estrategia: ${estrategia.toUpperCase()} (Ajuste ~${(factor * 100).toFixed(1)}%)`;
 
-    // 1. Desglose de Energía (leyendo los campos reales: punta, llano, valle)
     const aplicaEnergia = estrategia === 'mixta' || estrategia === 'energia';
+    const aplicaPotencia = estrategia === 'mixta' || estrategia === 'potencia';
 
+    // 1. Desglose de Energía
     ['punta', 'llano', 'valle'].forEach(periodo => {
         const precioActual = parseFloat(tarifa[periodo]) || 0; 
         const rebaja = aplicaEnergia ? precioActual * factor : 0;
-        const precioNuevo = Math.max(0.00001, precioActual - rebaja);
+        const precioNuevo = Math.max(0.0000001, precioActual - rebaja);
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td class="py-2.5 px-4 font-medium uppercase text-slate-700">${periodo}</td>
-            <td class="py-2.5 px-4 text-right text-slate-600">${precioActual.toFixed(5)} €</td>
-            <td class="py-2.5 px-4 text-right font-bold text-indigo-700">${precioNuevo.toFixed(5)} €</td>
-            <td class="py-2.5 px-4 text-right text-emerald-600 font-semibold">-${(rebaja).toFixed(5)} € (${(factor * 100).toFixed(0)}%)</td>
+            <td class="py-2.5 px-4 text-right text-slate-600">${precioActual.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right">
+                <input type="number" step="0.0000001" data-tipo="energia" data-periodo="${periodo}" 
+                    value="${precioActual.toFixed(7)}" 
+                    class="input-usuario-precio w-28 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </td>
+            <td class="py-2.5 px-4 text-right font-bold text-indigo-700">${precioNuevo.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right text-emerald-600 font-semibold">-${(rebaja).toFixed(7)} €</td>
         `;
         tbodyEnergia.appendChild(tr);
     });
 
-    // 2. Desglose de Potencia (leyendo los campos reales: fijo_punta y fijo_valle)
-    const aplicaPotencia = estrategia === 'mixta' || estrategia === 'potencia';
+    // 2. Desglose de Potencia
     const mapeoPotencia = [
         { key: 'fijo_punta', label: 'p1' },
         { key: 'fijo_valle', label: 'p2' }
@@ -175,19 +180,24 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
     mapeoPotencia.forEach(item => {
         const precioActual = parseFloat(tarifa[item.key]) || 0;
         const rebaja = aplicaPotencia ? precioActual * factor : 0;
-        const precioNuevo = Math.max(0.00001, precioActual - rebaja);
+        const precioNuevo = Math.max(0.0000001, precioActual - rebaja);
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td class="py-2.5 px-4 font-medium uppercase text-slate-700">${item.label}</td>
-            <td class="py-2.5 px-4 text-right text-slate-600">${precioActual.toFixed(5)} €</td>
-            <td class="py-2.5 px-4 text-right font-bold text-indigo-700">${precioNuevo.toFixed(5)} €</td>
-            <td class="py-2.5 px-4 text-right text-emerald-600 font-semibold">-${(rebaja).toFixed(5)} €</td>
+            <td class="py-2.5 px-4 text-right text-slate-600">${precioActual.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right">
+                <input type="number" step="0.0000001" data-tipo="potencia" data-periodo="${item.key}" 
+                    value="${precioActual.toFixed(7)}" 
+                    class="input-usuario-precio w-28 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </td>
+            <td class="py-2.5 px-4 text-right font-bold text-indigo-700">${precioNuevo.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right text-emerald-600 font-semibold">-${(rebaja).toFixed(7)} €</td>
         `;
         tbodyPotencia.appendChild(tr);
     });
 
-    // 3. Desglose de Excedentes Solares (leyendo el campo real: excedente)
+    // 3. Desglose de Excedentes Solares (opcional si aplica)
     if (tbodyExcedentes) {
         const precioExcedenteActual = parseFloat(tarifa.excedente) || 0;
         const aplicaExcedentes = estrategia === 'mixta' || estrategia === 'excedentes';
@@ -197,10 +207,85 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
         const trEx = document.createElement('tr');
         trEx.innerHTML = `
             <td class="py-2.5 px-4 font-medium uppercase text-slate-700">Excedentes Solares</td>
-            <td class="py-2.5 px-4 text-right text-slate-600">${precioExcedenteActual.toFixed(5)} €</td>
-            <td class="py-2.5 px-4 text-right font-bold text-emerald-700">${precioExcedenteNuevo.toFixed(5)} €</td>
-            <td class="py-2.5 px-4 text-right text-emerald-600 font-semibold">+${(mejoraExcedente).toFixed(5)} € (Bonus)</td>
+            <td class="py-2.5 px-4 text-right text-slate-600">${precioExcedenteActual.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right">
+                <input type="number" step="0.0000001" data-tipo="excedente" data-periodo="excedente" 
+                    value="${precioExcedenteActual.toFixed(7)}" 
+                    class="input-usuario-precio w-28 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </td>
+            <td class="py-2.5 px-4 text-right font-bold text-emerald-700">${precioExcedenteNuevo.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right text-emerald-600 font-semibold">+${(mejoraExcedente).toFixed(7)} €</td>
         `;
         tbodyExcedentes.appendChild(trEx);
+    }
+
+    // Activar eventos en tiempo real para los nuevos inputs de precio de usuario
+    document.querySelectorAll('.input-usuario-precio').forEach(input => {
+        input.addEventListener('input', calcularCosteConPreciosUsuario);
+    });
+
+    // Calcular el valor inicial del usuario al renderizar
+    calcularCosteConPreciosUsuario();
+}
+
+function calcularCosteConPreciosUsuario() {
+    // Necesitamos recuperar los volúmenes de energía y potencia del análisis global
+    // (Asegúrate de que 'datosAnalisisGlobal' contenga los kWh consumidos y potencias contratadas si los guardas, 
+    // o puedes recalcularlos a partir de los costes actuales divididos por el precio base de la tarifa).
+    
+    // Alternativa limpia y directa basada en los inputs modificados y los totales actuales:
+    let inputs = document.querySelectorAll('.input-usuario-precio');
+    if (inputs.length === 0) return;
+
+    // Recogemos los valores introducidos por el usuario
+    let preciosUser = {};
+    inputs.forEach(input => {
+        let tipo = input.getAttribute('data-tipo');
+        let periodo = input.getAttribute('data-periodo');
+        if (!preciosUser[tipo]) preciosUser[tipo] = {};
+        preciosUser[tipo][periodo] = parseFloat(input.value) || 0;
+    });
+
+    // NOTA: Para computar el coste exacto con estos nuevos precios, 
+    // multiplicamos los kWh de cada periodo por el nuevo precio introducido por el usuario 
+    // + el coste fijo de potencia recalculado + restando excedentes.
+    // Si ya tienes los kwh guardados en alguna variable global al hacer el init (ej: datosAnalisisGlobal.resumen_energia), úsalos:
+    const kwh = datosAnalisisGlobal.resumen_energia || { punta: 0, llano: 0, valle: 0, excedentes: 0 };
+    
+    // Obtenemos potencias del usuario (si las tienes accesibles o puedes estimarlas de la tarifa seleccionada)
+    const selectRivalIndex = document.getElementById('select-tarifa-rival').value;
+    if (selectRivalIndex === "") return;
+    const tarifaRival = mercadoFiltrado()[selectRivalIndex];
+    const tarifaRenovacion = datosAnalisisGlobal.tarifa_renovacion;
+
+    // Cálculo del coste de energía con precios de usuario
+    let pEnergia = preciosUser['energia'] || {};
+    let costeEnergiaUser = (kwh.punta * (pEnergia.punta ?? 0)) +
+                           (kwh.llano * (pEnergia.llano ?? 0)) +
+                           (kwh.valle * (pEnergia.valle ?? 0));
+
+    // Cálculo del coste de potencia (asumiendo proporción fija o usando los fijos introducidos)
+    let pPotencia = preciosUser['potencia'] || {};
+    // Usamos la proporción original de costes fijos de la tarifa rival adaptada a los nuevos inputs
+    let proporcionFijoPunta = tarifaRival.fijo_punta > 0 ? (pPotencia.fijo_punta / tarifaRival.fijo_punta) : 1;
+    let proporcionFijoValle = tarifaRival.fijo_valle > 0 ? (pPotencia.fijo_valle / tarifaRival.fijo_valle) : 1;
+    let costeFijoUser = (tarifaRival.coste_fijo * ((proporcionFijoPunta + proporcionFijoValle) / 2));
+
+    // Excedentes
+    let pExcedente = preciosUser['excedente']?.excedente ?? tarifaRival.excedente;
+    let costeExcedentesUser = kwh.excedentes * pExcedente;
+
+    // Coste total resultante para el usuario
+    let costeTotalUser = costeEnergiaUser + costeFijoUser - costeExcedentesUser;
+    if (costeTotalUser < 0) costeTotalUser = 0;
+
+    // Ahorro resultante comparado con la tarifa "Renovación"
+    let ahorroUsuarioFinal = tarifaRenovacion.coste_total - costeTotalUser;
+
+    // Pintar en el DOM el nuevo indicador de ahorro con precios de usuario
+    const labelAhorroUser = document.getElementById('sim-ahorro-usuario');
+    if (labelAhorroUser) {
+        labelAhorroUser.textContent = `${ahorroUsuarioFinal.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+        labelAhorroUser.className = `text-lg font-bold ${ahorroUsuarioFinal >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
     }
 }
