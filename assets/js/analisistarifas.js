@@ -78,6 +78,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     await cargarSuministrosIniciales()
+
+    // --- NUEVO: Botón para abrir el Simulador de Contraofertas ---
+    document.getElementById('btn-ir-mejorar').addEventListener('click', () => {
+        const suministro = selectSuministro.value;
+        const anio = selectAnio.value;
+        
+        // Detectar qué pestaña de periodo está activa actualmente
+        const periodoBtn = document.querySelector('.tab-periodo.bg-white');
+        const periodo = periodoBtn ? periodoBtn.getAttribute('data-periodo') : 'todos';
+
+        if (!suministro || !anio) {
+            alert('Por favor, selecciona primero un suministro y un año antes de simular la contraoferta.');
+            return;
+        }
+
+        // Redirigir a la página de mejora pasando los parámetros en la URL
+        window.location.href = `analisis/mejorar.html?suministro=${encodeURIComponent(suministro)}&anio=${encodeURIComponent(anio)}&periodo=${encodeURIComponent(periodo)}`;
+    });
 })
 
 async function cargarSuministrosIniciales() {
