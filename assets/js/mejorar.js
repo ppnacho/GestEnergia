@@ -23,10 +23,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Renderizar el badge de contexto en dos filas claras según lo solicitado
+    // Recuperamos el alias guardado en sessionStorage (o usamos el CUPS por defecto si no existiera)
+    const aliasSuministro = sessionStorage.getItem('alias_suministro') || suministro;
+
+    // Renderizar el badge de contexto en dos filas claras
     const contenedorBadge = document.getElementById('badge-contexto');
     contenedorBadge.innerHTML = `
-        <div class="font-bold text-slate-900">📦 Suministro: <span class="text-indigo-600">${suministro}</span></div>
+        <div class="font-bold text-slate-900">📦 Suministro: <span class="text-indigo-600">${aliasSuministro}</span> <span class="text-xs font-normal text-slate-400">(${suministro})</span></div>
         <div class="text-xs text-slate-500 flex gap-4">
             <span>📅 Año: <strong class="text-slate-700">${anio}</strong></span>
             <span>⏱️ Periodo: <strong class="text-slate-700">${periodo}</strong></span>
@@ -91,7 +94,7 @@ function ejecutarSimulacionMejora() {
     const estrategia = document.getElementById('select-estrategia').value;
     const margenSeguridad = parseFloat(document.getElementById('range-intensidad').value);
 
-    // Coste objetivo a batir (ahora el margen llega hasta 20€)
+    // Coste objetivo a batir
     const costeObjetivo = tarifaRenovacion.coste_total - margenSeguridad;
     const costeActualRival = tarifaRival.coste_total;
     const recorteNecesario = Math.max(0, costeActualRival - costeObjetivo);
@@ -112,7 +115,7 @@ function ejecutarSimulacionMejora() {
         }
     }
 
-    // Limitamos el descuento para que no sea un absurdo (máximo 40% de rebaja)
+    // Limitamos el descuento máximo al 40%
     factorDescuento = Math.min(0.40, Math.max(0, factorDescuento));
 
     // Calculamos nuevo coste estimado
@@ -128,7 +131,7 @@ function ejecutarSimulacionMejora() {
     const ahorroCliente = tarifaRenovacion.coste_total - costeNuevoRival;
     document.getElementById('sim-ahorro-cliente').textContent = `${ahorroCliente.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 
-    // Renderizar tablas detalladas de precios unitarios (incluyendo excedentes)
+    // Renderizar tablas detalladas (Energía, Potencia y Excedentes)
     renderizarTablasDetalladas(tarifaRival, estrategia, factorDescuento);
 }
 
@@ -143,7 +146,7 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
 
     document.getElementById('badge-estrategia-aplicada').textContent = `Estrategia: ${estrategia.toUpperCase()} (Ajuste ~${(factor * 100).toFixed(1)}%)`;
 
-    // 1. Desglose de Energía (Punta, Llano, Valle)
+    // 1. Desglose de Energía
     const preciosEnergiaActual = tarifa.precios_energia || { punta: 0.15, llano: 0.12, valle: 0.09 }; 
     const aplicaEnergia = estrategia === 'mixta' || estrategia === 'energia';
 
@@ -162,7 +165,7 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
         tbodyEnergia.appendChild(tr);
     });
 
-    // 2. Desglose de Potencia (P1, P2)
+    // 2. Desglose de Potencia
     const preciosPotenciaActual = tarifa.precios_potencia || { p1: 0.08, p2: 0.04 };
     const aplicaPotencia = estrategia === 'mixta' || estrategia === 'potencia';
 
@@ -185,7 +188,6 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
     if (tbodyExcedentes) {
         const precioExcedenteActual = tarifa.precio_excedentes || 0.05;
         const aplicaExcedentes = estrategia === 'mixta' || estrategia === 'excedentes';
-        // En excedentes, una mejora para el cliente significa incrementar el precio al que se le compensa
         const mejoraExcedente = aplicaExcedentes ? precioExcedenteActual * (factor * 0.5) : 0;
         const precioExcedenteNuevo = precioExcedenteActual + mejoraExcedente;
 
