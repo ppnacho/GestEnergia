@@ -56,17 +56,18 @@
                 <p class="text-[11px] text-slate-400 mt-4">Partimos de los precios base de esta comercializadora.</p>
             </div>
 
-            <!-- 2. Estrategia de Ajuste -->
+            <!-- 2. Estrategia de Ajuste Ampliada con Potencia -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
                 <div>
                     <label for="select-estrategia" class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">2. Estrategia de Ataque</label>
                     <select id="select-estrategia" class="bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
-                        <option value="lineal">Rebaja lineal en Energía (-%)</option>
+                        <option value="mixta">Equilibrada (Energía + Término Potencia)</option>
+                        <option value="energia">Exclusivo en Precios de Energía (-%)</option>
+                        <option value="potencia">Exclusivo en Término Fijo de Potencia</option>
                         <option value="excedentes">Mejorar compensación de Excedentes</option>
-                        <option value="valle">Ajustar exclusivamente periodo Valle</option>
                     </select>
                 </div>
-                <p class="text-[11px] text-slate-400 mt-4">Define qué palanca comercial se moverá.</p>
+                <p class="text-[11px] text-slate-400 mt-4">Elige qué componentes de la factura se rebajarán.</p>
             </div>
 
             <!-- 3. Intensidad del Cambio -->
