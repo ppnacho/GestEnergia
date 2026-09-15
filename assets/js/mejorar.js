@@ -260,6 +260,14 @@ function calcularCosteConPreciosUsuario() {
     const factorMeses = datosAnalisisGlobal.factor_meses || 12;
     const diasTotales = factorMeses * 30;
 
+    // <-- Pone esto aquí para inspeccionarlas en la consola del navegador
+console.log("Depuración - Cálculo de Potencia:", {
+    potPuntaW,
+    potValleW,
+    factorMeses,
+    diasTotales
+});
+
     let pPotencia = preciosUser['potencia'] || {};
     let precioPuntaUser = pPotencia.fijo_punta ?? tarifaRival.fijo_punta ?? 0;
     let precioValleUser = pPotencia.fijo_valle ?? tarifaRival.fijo_valle ?? 0;
