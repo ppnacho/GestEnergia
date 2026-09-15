@@ -12,16 +12,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.location.href = '../index.html'
             return
         }
+    } // <-- Aquí se cierra correctamente el if de autenticación
 
-    // Botón Volver al análisis (protegido por si cambia el ID en el HTML)
-    const btnVolver = document.getElementById('btn-volver');
+    // Botón Volver al análisis (ahora está fuera y se ejecuta siempre)
+    const btnVolver = document.getElementById('btn-volver')
     if (btnVolver) {
         btnVolver.addEventListener('click', () => {
-            window.location.href = '../analisis/analisistarifas.html'; // O la ruta correspondiente a tu página de análisis
-        });
+            window.location.href = '../analisis/analisistarifas.html'
+        })
     }
-    }
-
+})
     // Listeners para los selectores de simulación
     const selectTarifaRival = document.getElementById('select-tarifa-rival')
     const selectEstrategia = document.getElementById('select-estrategia')
