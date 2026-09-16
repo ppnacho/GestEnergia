@@ -94,57 +94,61 @@ function ejecutarSimulacionMejora() {
     const margenSeguridad = parseFloat(document.getElementById('range-intensidad').value) || 0;
 
     const kwh = datosAnalisisGlobal.resumen_energia || { punta: 0, llano: 0, valle: 0, excedentes: 0 };
-    
-    // Costes actuales de referencia de la rival
-    const costeActualEnergia = (kwh.punta * (tarifaRival.punta || 0)) +
-                               (kwh.llano * (tarifaRival.llano || 0)) +
-                               (kwh.valle * (tarifaRival.valle || 0));
-
     const potPuntaW = datosAnalisisGlobal.pot_punta_w || 0;
     const potValleW = datosAnalisisGlobal.pot_valle_w || 0;
     const factorMeses = datosAnalisisGlobal.factor_meses_fijo || 12;
-    
-    const costeActualPotencia = ((potPuntaW / 1000) * 30 * (tarifaRival.fijo_punta || 0) * factorMeses) +
-                                ((potValleW / 1000) * 30 * (tarifaRival.fijo_valle || 0) * factorMeses);
 
-    const costeActualExcedentes = kwh.excedentes * (tarifaRival.excedente || 0);
     const costeActualRival = tarifaRival.coste_total;
+    
+    // LA CLAVE: El coste objetivo de la contraoferta es exactamente Renovación - Margen
+    const costeObjetivoContraoferta = Math.max(0, tarifaRenovacion.coste_total - margenSeguridad);
+    const recorteNecesario = Math.max(0, costeActualRival - costeObjetivoContraoferta);
 
-    const costeObjetivo = tarifaRenovacion.coste_total - margenSeguridad;
-    const recorteNecesario = Math.max(0, costeActualRival - costeObjetivo);
-
+    // Mostrar los valores fijos principales en las tarjetas superiores
     document.getElementById('sim-coste-original').textContent = `${costeActualRival.toFixed(2)} €`;
+    
+    const labelCosteNuevo = document.getElementById('sim-coste-nuevo');
+    if (labelCosteNuevo) {
+        labelCosteNuevo.textContent = `${costeObjetivoContraoferta.toFixed(2)} €`;
+    }
 
-    // Factores de ajuste específicos según la estrategia
+    const labelDiffRenovacion = document.getElementById('sim-diferencia-renovacion');
+    if (labelDiffRenovacion) {
+        const diffRenov = costeObjetivoContraoferta - tarifaRenovacion.coste_total;
+        labelDiffRenovacion.textContent = `(${diffRenov <= 0 ? '' : '+'}${diffRenov.toFixed(2)} € vs Renovación)`;
+    }
+
+    // Costes base actuales de la rival por componentes
+    const cEnergiaBase = (kwh.punta * (tarifaRival.punta || 0)) +
+                         (kwh.llano * (tarifaRival.llano || 0)) +
+                         (kwh.valle * (tarifaRival.valle || 0));
+
+    const cPotenciaBase = ((potPuntaW / 1000) * 30 * (tarifaRival.fijo_punta || 0) * factorMeses) +
+                          ((potValleW / 1000) * 30 * (tarifaRival.fijo_valle || 0) * factorMeses);
+
     let factorEnergia = 0;
     let factorPotencia = 0;
     let incrementoExcedente = 0;
 
+    // Repartir el recorte necesario de forma exclusiva según la estrategia seleccionada
     if (recorteNecesario > 0) {
-        if (estrategia === 'energia') {
-            if (costeActualEnergia > 0) {
-                factorEnergia = Math.min(0.60, recorteNecesario / costeActualEnergia);
-            }
-        } else if (estrategia === 'potencia') {
-            if (costeActualPotencia > 0) {
-                factorPotencia = Math.min(0.60, recorteNecesario / costeActualPotencia);
-            }
-        } else if (estrategia === 'excedentes') {
-            if (kwh.excedentes > 0) {
-                // Para reducir el coste total, aumentamos el precio de excedentes
-                incrementoExcedente = recorteNecesario / kwh.excedentes;
-            }
+        if (estrategia === 'energia' && cEnergiaBase > 0) {
+            factorEnergia = Math.min(0.90, recorteNecesario / cEnergiaBase);
+        } else if (estrategia === 'potencia' && cPotenciaBase > 0) {
+            factorPotencia = Math.min(0.90, recorteNecesario / cPotenciaBase);
+        } else if (estrategia === 'excedentes' && kwh.excedentes > 0) {
+            // Para reducir el coste total de la factura, aumentamos el valor de compensación de excedentes
+            incrementoExcedente = recorteNecesario / kwh.excedentes;
         } else if (estrategia === 'mixta') {
-            const baseMix = costeActualEnergia + costeActualPotencia;
+            const baseMix = cEnergiaBase + cPotenciaBase;
             if (baseMix > 0) {
-                const fMix = Math.min(0.50, recorteNecesario / baseMix);
+                const fMix = Math.min(0.60, recorteNecesario / baseMix);
                 factorEnergia = fMix;
                 factorPotencia = fMix;
             }
         }
     }
 
-    // Renderizar las tablas detalladas pasando los factores o incrementos puros
     renderizarTablasDetalladas(tarifaRival, estrategia, {
         factorEnergia,
         factorPotencia,
