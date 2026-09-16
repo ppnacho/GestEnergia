@@ -60,7 +60,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     valle: parseFloat(document.getElementById('valle').value),
                     excedente: parseFloat(document.getElementById('excedente').value),
                     fijo_punta: parseFloat(document.getElementById('fijo_punta').value),
-                    fijo_valle: parseFloat(document.getElementById('fijo_valle').value)
+                    fijo_valle: parseFloat(document.getElementById('fijo_valle').value),
+                    activa: document.getElementById('activa').checked,
+                    compara: document.getElementById('compara').checked
                 };
 
                 // Llamada a la Edge Function 'carga-tarifas' (POST para guardar/actualizar)
@@ -188,6 +190,8 @@ function llenarFormularioTarifa(id) {
     document.getElementById('excedente').value = tarifa.excedente ?? '';
     document.getElementById('fijo_punta').value = tarifa.fijo_punta ?? '';
     document.getElementById('fijo_valle').value = tarifa.fijo_valle ?? '';
+    document.getElementById('activa').checked = Boolean(tarifa.activa);
+    document.getElementById('compara').checked = Boolean(tarifa.compara);
 
     document.getElementById('formTitle').textContent = `Actualizar Tarifa: ${tarifa.nombre}`;
     document.getElementById('btnNueva').classList.remove('hidden');
