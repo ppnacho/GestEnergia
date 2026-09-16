@@ -36,7 +36,7 @@
             <div>
                 <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-100 px-2.5 py-1 rounded-md">Modo Optimización Comercial</span>
                 <h2 class="text-lg font-bold text-indigo-950 mt-2">Diseña una contraoferta imbatible</h2>
-                <p class="text-xs text-indigo-800 mt-1">Calcula las modificaciones milimétricas necesarias en una tarifa competidora para superar a la Renovación sin erosionar excesivamente el margen.</p>
+                <p class="text-xs text-indigo-800 mt-1">Calcula las modificaciones milimétricas necesarias en una tarifa competidora para ajustarla al coste de renovación.</p>
             </div>
             <!-- Cabecera de la página / Contexto -->
             <div id="badge-contexto" class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6 text-sm text-slate-800 font-medium flex flex-col gap-1">
@@ -44,8 +44,8 @@
             </div>
         </div>
 
-        <!-- Panel de Control de la Simulación -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- Panel de Control de la Simulación (Ajustado a 2 columnas) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             
             <!-- 1. Selección de Tarifa Rival -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
@@ -72,18 +72,6 @@
                 <p class="text-[11px] text-slate-400 mt-4">Elige qué componentes de la factura se rebajarán.</p>
             </div>
 
-            <!-- 3. Intensidad del Cambio -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                <div>
-                    <div class="flex justify-between items-center mb-2">
-                        <label for="range-intensidad" class="text-xs font-bold uppercase tracking-wider text-slate-400">3. Marg objetivo / Intensidad</label>
-                        <span id="label-intensidad" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Automático (Justo a ganar)</span>
-                    </div>
-                    <input id="range-intensidad" type="range" min="0" max="20" step="1" value="1" class="w-full accent-indigo-600 cursor-pointer mt-3">
-                </div>
-                <p class="text-[11px] text-slate-400 mt-4">Busca superar a Renovación por un margen de seguridad óptimo.</p>
-            </div>
-
         </div>
 
         <!-- Resultado de la Simulación (Comparativa Antes vs Después) -->
@@ -93,8 +81,8 @@
                 <p class="text-xs text-slate-500">Comparativa del impacto anual tras aplicar los ajustes paramétricos.</p>
             </div>
 
-           <!-- Contenedor principal de las 4 tarjetas en una sola fila (grid de 4 columnas en pantallas medianas/grandes) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+           <!-- Contenedor principal de las 3 tarjetas restantes en una fila flexible -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     
             <!-- Tarjeta 1: Coste Original -->
                 <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center flex flex-col justify-center">
@@ -109,13 +97,7 @@
                     <span id="sim-diferencia-renovacion" class="text-xs text-slate-500 mt-1">(0,00 € vs Renovación)</span>
                 </div>
 
-                <!-- Tarjeta 3: Ahorro para el Cliente -->
-                <div class="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 text-center flex flex-col justify-center">
-                    <span class="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1">Ahorro Anual para el Cliente</span>
-                    <span id="sim-ahorro-cliente" class="text-2xl font-bold text-emerald-600">0,00 €</span>
-                </div>
-
-                <!-- Tarjeta 4: Ahorro con Precio Usuario (Nueva, integrada en la misma fila) -->
+                <!-- Tarjeta 3: Ahorro con Precio Usuario -->
                 <div class="bg-emerald-50/80 border border-emerald-200 rounded-xl p-4 text-center flex flex-col justify-center shadow-sm">
                     <span class="text-xs font-semibold text-emerald-800 uppercase tracking-wider mb-1">Ahorro con Precio Usuario</span>
                     <span id="sim-ahorro-usuario" class="text-2xl font-bold text-emerald-700">0,00 €</span>
@@ -141,7 +123,7 @@
                                 <tr class="border-b text-xs uppercase text-slate-500 bg-slate-50">
                                     <th class="py-2.5 px-4">Periodo</th>
                                     <th class="py-2.5 px-4 text-right">Precio Tarifa</th>
-                                    <th class="py-2.5 px-4 text-right">Precio Usuario</th> <!-- 👈 NUEVA COLUMNA -->
+                                    <th class="py-2.5 px-4 text-right">Precio Usuario</th>
                                     <th class="py-2.5 px-4 text-right">Precio Nuevo</th>
                                     <th class="py-2.5 px-4 text-right">Dif. Automática</th>
                                     <th class="py-2.5 px-4 text-right">Dif. Usuario</th>
@@ -165,7 +147,7 @@
                                 <tr>
                                     <th class="py-2.5 px-4">Periodo (P1 / P2)</th>
                                     <th class="py-2.5 px-4 text-right">Precio Tarifa</th>
-                                    <th class="py-2.5 px-4 text-right">Precio Usuario</th> <!-- 👈 NUEVA COLUMNA -->
+                                    <th class="py-2.5 px-4 text-right">Precio Usuario</th>
                                     <th class="py-2.5 px-4 text-right">Precio Nuevo</th>
                                     <th class="py-2.5 px-4 text-right">Dif. Automática</th>
                                     <th class="py-2.5 px-4 text-right">Dif. Usuario</th>
