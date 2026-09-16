@@ -4,7 +4,6 @@ import { supabase } from './supabaseClient.js';
 let tarifasCache = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Verificación inicial de sesión activa
     try {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError || !session) {
@@ -23,10 +22,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnNueva = document.getElementById('btnNueva');
     const formTitle = document.getElementById('formTitle');
 
-    // Cargar listado inicial de tarifas desde la Edge Function
     await cargarTarifas();
 
-    // Botón cancelar edición
     if (btnNueva) {
         btnNueva.addEventListener('click', () => {
             tarifaForm.reset();
@@ -37,7 +34,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Envío del formulario (Crear o Actualizar)
     if (tarifaForm) {
         tarifaForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -65,18 +61,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     compara: document.getElementById('compara').checked
                 };
 
-                // Llamada a la Edge Function 'carga-tarifas' (POST para guardar/actualizar)
                 const { data, error } = await supabase.functions.invoke('carga-tarifas', {
                     body: payload
                 });
 
-                if (error) {
-                    throw new Error(error.message || 'Error en la invocación de la función.');
-                }
-
-                if (data && data.error) {
-                    throw new Error(data.error);
-                }
+                if (error) throw new Error(error.message || 'Error en la invocación de la función.');
+                if (data && data.error) throw new Error(data.error);
 
                 formMessage.textContent = tarifaId ? '¡Tarifa actualizada correctamente!' : '¡Tarifa registrada correctamente!';
                 formMessage.classList.add('bg-emerald-50', 'text-emerald-700');
@@ -87,7 +77,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 formTitle.textContent = 'Carga de Tarifa Eléctrica';
                 btnNueva.classList.add('hidden');
 
-                // Recargar listado
                 await cargarTarifas();
 
             } catch (err) {
@@ -103,7 +92,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// Función para obtener las tarifas desde la Edge Function vía GET
 async function cargarTarifas() {
     const tbody = document.getElementById('tarifasTableBody');
     const contador = document.getElementById('contadorTarifas');
@@ -120,7 +108,7 @@ async function cargarTarifas() {
         contador.textContent = `${tarifasCache.length} tarifa${tarifasCache.length === 1 ? '' : 's'}`;
 
         if (tarifasCache.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-slate-400">No hay tarifas activas o en comparación.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center py-6 text-slate-400">No hay tarifas activas o en comparación.</td></tr>`;
             return;
         }
 
@@ -129,7 +117,6 @@ async function cargarTarifas() {
             const tr = document.createElement('tr');
             tr.className = tarifa.activa ? 'bg-emerald-50/50 font-medium' : 'hover:bg-slate-50/50';
 
-            // Formatear fecha created_at a dd-mm-aaaa
             let fechaFormateada = '-';
             if (tarifa.created_at) {
                 const fechaObj = new Date(tarifa.created_at);
@@ -144,25 +131,28 @@ async function cargarTarifas() {
 
             tr.innerHTML = `
                 <td class="py-3 px-4">
-                    <div class="flex items-center space-x-2">
-                        ${tarifa.activa ? '<span class="w-2 h-2 rounded-full bg-emerald-600 inline-block"></span>' : ''}
-                        <span class="text-slate-900">${tarifa.nombre || 'Sin nombre'}</span>
-                        ${tarifa.activa ? '<span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold">Activa</span>' : ''}
-                        ${tarifa.compara ? '<span class="text-[10px] bg-sky-100 text-sky-800 px-2 py-0.5 rounded font-semibold">Compara</span>' : ''}
+                    <div class="flex flex-col space-y-1">
+                        <div class="flex items-center space-x-1.5">
+                            ${tarifa.activa ? '<span class="w-2 h-2 rounded-full bg-emerald-600 inline-block"></span>' : ''}
+                            <span class="text-slate-900 font-semibold">${tarifa.nombre || 'Sin nombre'}</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <span class="text-indigo-600 font-medium text-[11px] bg-indigo-50 px-2 py-0.5 rounded">${tarifa.alias_suministro || '-'}</span>
+                            ${tarifa.activa ? '<span class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">Activa</span>' : ''}
+                            ${tarifa.compara ? '<span class="text-[9px] bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded font-bold">Compara</span>' : ''}
+                        </div>
                     </div>
                 </td>
-                <td class="py-3 px-4 text-slate-600 font-mono text-xs">${tarifa.suministro || '-'}</td>
-                <td class="py-3 px-4 text-slate-500 text-xs">${fechaFormateada}</td>
+                <td class="py-3 px-4 text-slate-500 text-[11px]">${fechaFormateada}</td>
                 <td class="py-3 px-4 text-right">
-                    <button type="button" class="btn-editar bg-slate-100 hover:bg-emerald-600 hover:text-white text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors" data-id="${tarifa.id}">
-                        Actualizar / Editar
+                    <button type="button" class="btn-editar bg-slate-100 hover:bg-emerald-600 hover:text-white text-slate-700 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors" data-id="${tarifa.id}">
+                        Editar
                     </button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
 
-        // Asignar eventos a los botones de editar/actualizar
         document.querySelectorAll('.btn-editar').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = e.target.getAttribute('data-id');
@@ -172,11 +162,10 @@ async function cargarTarifas() {
 
     } catch (err) {
         console.error("Error al cargar tarifas:", err);
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-rose-500 text-xs">Error al cargar el listado de tarifas.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="3" class="text-center py-6 text-rose-500 text-xs">Error al cargar listado.</td></tr>`;
     }
 }
 
-// Rellenar formulario para actualizar
 function llenarFormularioTarifa(id) {
     const tarifa = tarifasCache.find(t => t.id == id);
     if (!tarifa) return;
