@@ -72,12 +72,6 @@ function inicializarSimulador(data) {
 
     selectRival.addEventListener('change', ejecutarSimulacionMejora);
     document.getElementById('select-estrategia').addEventListener('change', ejecutarSimulacionMejora);
-    
-    const sliderIntensidad = document.getElementById('range-intensidad');
-    sliderIntensidad.addEventListener('input', (e) => {
-        document.getElementById('label-intensidad').textContent = `Margen objetivo: -${e.target.value} €`;
-        ejecutarSimulacionMejora();
-    });
 }
 
 function mercadoFiltrado() {
@@ -91,7 +85,6 @@ function ejecutarSimulacionMejora() {
     const tarifaRival = mercadoFiltrado()[selectRivalIndex];
     const tarifaRenovacion = datosAnalisisGlobal.tarifa_renovacion;
     const estrategia = document.getElementById('select-estrategia').value;
-    const margenSeguridad = parseFloat(document.getElementById('range-intensidad').value) || 0;
 
     const kwh = datosAnalisisGlobal.resumen_energia || { punta: 0, llano: 0, valle: 0, excedentes: 0 };
     const potPuntaW = datosAnalisisGlobal.pot_punta_w || 0;
@@ -100,11 +93,11 @@ function ejecutarSimulacionMejora() {
 
     const costeActualRival = tarifaRival.coste_total;
     
-    // LA CLAVE: El coste objetivo de la contraoferta es exactamente Renovación - Margen
-    const costeObjetivoContraoferta = Math.max(0, tarifaRenovacion.coste_total - margenSeguridad);
+    // El coste objetivo de la contraoferta se alinea directamente al total de la tarifa de renovación
+    const costeObjetivoContraoferta = Math.max(0, tarifaRenovacion.coste_total);
     const recorteNecesario = Math.max(0, costeActualRival - costeObjetivoContraoferta);
 
-    // Mostrar los valores fijos principales en las tarjetas superiores
+    // Mostrar los valores principales en las tarjetas superiores conservadas
     document.getElementById('sim-coste-original').textContent = `${costeActualRival.toFixed(2)} €`;
     
     const labelCosteNuevo = document.getElementById('sim-coste-nuevo');
@@ -130,14 +123,13 @@ function ejecutarSimulacionMejora() {
     let factorPotencia = 0;
     let incrementoExcedente = 0;
 
-    // Repartir el recorte necesario de forma exclusiva según la estrategia seleccionada
+    // Repartir el recorte necesario según la estrategia seleccionada
     if (recorteNecesario > 0) {
         if (estrategia === 'energia' && cEnergiaBase > 0) {
             factorEnergia = Math.min(0.90, recorteNecesario / cEnergiaBase);
         } else if (estrategia === 'potencia' && cPotenciaBase > 0) {
             factorPotencia = Math.min(0.90, recorteNecesario / cPotenciaBase);
         } else if (estrategia === 'excedentes' && kwh.excedentes > 0) {
-            // Para reducir el coste total de la factura, aumentamos el valor de compensación de excedentes
             incrementoExcedente = recorteNecesario / kwh.excedentes;
         } else if (estrategia === 'mixta') {
             const baseMix = cEnergiaBase + cPotenciaBase;
@@ -278,12 +270,10 @@ function calcularCosteConPreciosUsuario() {
 
         let diffCell = document.querySelector(`[data-diff-tipo="${tipo}"][data-diff-periodo="${periodo}"]`);
         if (diffCell) {
-            let diff = tipo === 'excedente' ? (precioUser - precioActual) : (precioActual - precioUser);
             let pct = precioActual > 0 ? ((precioUser - precioActual) / precioActual) * 100 : 0;
 
             if (precioUser !== precioActual) {
                 let isAhorro = tipo === 'excedente' ? (precioUser > precioActual) : (precioUser < precioActual);
-                let signVal = tipo === 'excedente' ? (precioUser > precioActual ? '+' : '') : '-';
                 let signPct = pct > 0 ? '+' : '';
 
                 diffCell.innerHTML = `${tipo === 'excedente' && precioUser > precioActual ? '+' : (isAhorro ? '-' : '+')}${Math.abs(precioUser - precioActual).toFixed(7)} € <span class="text-xs font-normal text-slate-400 ml-1">(${signPct}${pct.toFixed(1)}%)</span>`;
