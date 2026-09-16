@@ -294,3 +294,9 @@ function calcularCosteConPreciosUsuario() {
         labelAhorroUser.className = `text-lg font-bold ${ahorroUsuarioFinal >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
     }
 }
+
+document.addEventListener('input', (e) => {
+    if (e.target.classList.contains('input-usuario-precio')) {
+        calcularCosteConPreciosUsuario();
+    }
+});
