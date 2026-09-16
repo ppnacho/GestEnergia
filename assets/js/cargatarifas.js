@@ -137,7 +137,7 @@ async function cargarTarifas() {
                             <span class="text-slate-900 font-semibold">${tarifa.nombre || 'Sin nombre'}</span>
                         </div>
                         <div class="flex items-center space-x-1.5">
-                            <span class="text-indigo-600 font-medium text-[11px] bg-indigo-50 px-2 py-0.5 rounded">${tarifa.alias_suministro || '-'}</span>
+                            <span class="text-indigo-600 font-medium text-[11px] bg-indigo-50 px-2 py-0.5 rounded">${tarifa.alias_suministro || 'Suministro'}</span>
                             ${tarifa.activa ? '<span class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">Activa</span>' : ''}
                             ${tarifa.compara ? '<span class="text-[9px] bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded font-bold">Compara</span>' : ''}
                         </div>
