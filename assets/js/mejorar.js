@@ -166,13 +166,13 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
                     value="${precioActual.toFixed(7)}" 
                     class="input-usuario-precio w-28 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </td>
-            <td class="py-2.5 px-4 text-right font-bold text-indigo-700">${precioNuevo.toFixed(7)} €</td>
-            <td class="py-2.5 px-4 text-right text-emerald-600 font-semibold">-${(rebaja).toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right font-bold text-slate-900">${precioNuevo.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right font-semibold ${rebaja > 0 ? 'text-emerald-600' : 'text-slate-400'}">-${(rebaja).toFixed(7)} €</td>
         `;
         tbodyEnergia.appendChild(tr);
     });
 
-    // 2. Desglose de Potencia
+    // 2. Desglose de Potencia (Alineado exactamente a 5 columnas)
     const mapeoPotencia = [
         { key: 'fijo_punta', label: 'p1' },
         { key: 'fijo_valle', label: 'p2' }
@@ -192,13 +192,13 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
                     value="${precioActual.toFixed(7)}" 
                     class="input-usuario-precio w-28 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </td>
-            <td class="py-2.5 px-4 text-right font-bold text-indigo-700">${precioNuevo.toFixed(7)} €</td>
-            <td class="py-2.5 px-4 text-right text-emerald-600 font-semibold">-${(rebaja).toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right font-bold text-slate-900">${precioNuevo.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right font-semibold ${rebaja > 0 ? 'text-emerald-600' : 'text-slate-400'}">-${(rebaja).toFixed(7)} €</td>
         `;
         tbodyPotencia.appendChild(tr);
     });
 
-    // 3. Desglose de Excedentes Solares (opcional si aplica)
+    // 3. Desglose de Excedentes Solares (Alineado exactamente a 5 columnas)
     if (tbodyExcedentes) {
         const precioExcedenteActual = parseFloat(tarifa.excedente) || 0;
         const aplicaExcedentes = estrategia === 'mixta' || estrategia === 'excedentes';
@@ -214,8 +214,8 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
                     value="${precioExcedenteActual.toFixed(7)}" 
                     class="input-usuario-precio w-28 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </td>
-            <td class="py-2.5 px-4 text-right font-bold text-emerald-700">${precioExcedenteNuevo.toFixed(7)} €</td>
-            <td class="py-2.5 px-4 text-right text-emerald-600 font-semibold">+${(mejoraExcedente).toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right font-bold text-slate-900">${precioExcedenteNuevo.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right font-semibold ${mejoraExcedente > 0 ? 'text-emerald-600' : 'text-slate-400'}">+${(mejoraExcedente).toFixed(7)} €</td>
         `;
         tbodyExcedentes.appendChild(trEx);
     }
