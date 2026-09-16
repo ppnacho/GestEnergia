@@ -122,15 +122,17 @@
                 </form>
             </div>
 
-            <!-- Columna Derecha: Listado de Tarifas (5 columnas) -->
-            <div class="lg:col-span-5 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
+            <!-- Columna Derecha: Listado de Tarifas con altura equilibrada y scroll interno (5 columnas) -->
+            <div class="lg:col-span-5 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200 flex flex-col self-stretch overflow-hidden">
                 <div class="px-6 py-5 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
                     <h3 class="font-bold text-slate-900 text-sm">Tarifas Registradas</h3>
                     <span id="contadorTarifas" class="text-xs bg-slate-200/70 text-slate-700 px-2.5 py-1 rounded-full font-semibold">0 tarifas</span>
                 </div>
-                <div class="overflow-x-auto">
+                
+                <!-- Contenedor con scroll interno para la tabla -->
+                <div class="flex-grow overflow-y-auto max-h-[580px]">
                     <table class="w-full text-left border-collapse">
-                        <thead>
+                        <thead class="sticky top-0 bg-white z-10 shadow-sm">
                             <tr class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-200">
                                 <th class="py-3 px-4">Tarifa / Alias</th>
                                 <th class="py-3 px-4">Fecha</th>
