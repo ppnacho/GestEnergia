@@ -50,7 +50,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (error || !data || data.error) throw error || new Error(data?.error);
 
+        // --- VISUALIZACIÓN POR CONSOLA SOLICITADA ---
+        console.log("📦 Objeto JSON recibido de la Edge Function (data):", data);
+
         datosAnalisisGlobal = data;
+
+        console.log("⚙️ Variable global asignada (datosAnalisisGlobal):", datosAnalisisGlobal);
+        // -------------------------------------------
+        
         inicializarSimulador(data);
 
     } catch (err) {
