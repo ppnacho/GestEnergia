@@ -162,17 +162,17 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
             <td class="py-2.5 px-4 font-medium uppercase text-slate-700">${periodo}</td>
             <td class="py-2.5 px-4 text-right text-slate-600">${precioActual.toFixed(7)} €</td>
             <td class="py-2.5 px-4 text-right">
-                <input type="number" step="0.0000001" data-tipo="energia" data-periodo="${periodo}" 
+                <input type="number" step="0.0000001" data-tipo="energia" data-periodo="${periodo}" data-precio-actual="${precioActual}"
                     value="${precioActual.toFixed(7)}" 
                     class="input-usuario-precio w-28 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </td>
             <td class="py-2.5 px-4 text-right font-bold text-slate-900">${precioNuevo.toFixed(7)} €</td>
-            <td class="py-2.5 px-4 text-right font-semibold ${rebaja > 0 ? 'text-emerald-600' : 'text-slate-400'}">-${(rebaja).toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right font-semibold text-slate-400" data-diff-tipo="energia" data-diff-periodo="${periodo}">-0.0000000 €</td>
         `;
         tbodyEnergia.appendChild(tr);
     });
 
-    // 2. Desglose de Potencia (Alineado exactamente a 5 columnas)
+    // 2. Desglose de Potencia
     const mapeoPotencia = [
         { key: 'fijo_punta', label: 'p1' },
         { key: 'fijo_valle', label: 'p2' }
@@ -188,17 +188,17 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
             <td class="py-2.5 px-4 font-medium uppercase text-slate-700">${item.label}</td>
             <td class="py-2.5 px-4 text-right text-slate-600">${precioActual.toFixed(7)} €</td>
             <td class="py-2.5 px-4 text-right">
-                <input type="number" step="0.0000001" data-tipo="potencia" data-periodo="${item.key}" 
+                <input type="number" step="0.0000001" data-tipo="potencia" data-periodo="${item.key}" data-precio-actual="${precioActual}"
                     value="${precioActual.toFixed(7)}" 
                     class="input-usuario-precio w-28 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </td>
             <td class="py-2.5 px-4 text-right font-bold text-slate-900">${precioNuevo.toFixed(7)} €</td>
-            <td class="py-2.5 px-4 text-right font-semibold ${rebaja > 0 ? 'text-emerald-600' : 'text-slate-400'}">-${(rebaja).toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right font-semibold text-slate-400" data-diff-tipo="potencia" data-diff-periodo="${item.key}">-0.0000000 €</td>
         `;
         tbodyPotencia.appendChild(tr);
     });
 
-    // 3. Desglose de Excedentes Solares (Alineado exactamente a 5 columnas)
+    // 3. Desglose de Excedentes Solares
     if (tbodyExcedentes) {
         const precioExcedenteActual = parseFloat(tarifa.excedente) || 0;
         const aplicaExcedentes = estrategia === 'mixta' || estrategia === 'excedentes';
@@ -210,12 +210,12 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
             <td class="py-2.5 px-4 font-medium uppercase text-slate-700">Excedentes Solares</td>
             <td class="py-2.5 px-4 text-right text-slate-600">${precioExcedenteActual.toFixed(7)} €</td>
             <td class="py-2.5 px-4 text-right">
-                <input type="number" step="0.0000001" data-tipo="excedente" data-periodo="excedente" 
+                <input type="number" step="0.0000001" data-tipo="excedente" data-periodo="excedente" data-precio-actual="${precioExcedenteActual}"
                     value="${precioExcedenteActual.toFixed(7)}" 
                     class="input-usuario-precio w-28 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </td>
             <td class="py-2.5 px-4 text-right font-bold text-slate-900">${precioExcedenteNuevo.toFixed(7)} €</td>
-            <td class="py-2.5 px-4 text-right font-semibold ${mejoraExcedente > 0 ? 'text-emerald-600' : 'text-slate-400'}">+${(mejoraExcedente).toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right font-semibold text-slate-400" data-diff-tipo="excedente" data-diff-periodo="excedente">+0.0000000 €</td>
         `;
         tbodyExcedentes.appendChild(trEx);
     }
@@ -233,13 +233,46 @@ function calcularCosteConPreciosUsuario() {
     let inputs = document.querySelectorAll('.input-usuario-precio');
     if (inputs.length === 0) return;
 
-    // Recogemos los valores introducidos por el usuario
+    // Recogemos los valores introducidos por el usuario y actualizamos su 5ª columna (Diferencia de Usuario)
     let preciosUser = {};
     inputs.forEach(input => {
         let tipo = input.getAttribute('data-tipo');
         let periodo = input.getAttribute('data-periodo');
+        let precioActual = parseFloat(input.getAttribute('data-precio-actual')) || 0;
+        let precioUser = parseFloat(input.value) || 0;
+
         if (!preciosUser[tipo]) preciosUser[tipo] = {};
-        preciosUser[tipo][periodo] = parseFloat(input.value) || 0;
+        preciosUser[tipo][periodo] = precioUser;
+
+        // Actualizar la 5ª columna de diferencia basada en usuario
+        let diffCell = document.querySelector(`[data-diff-tipo="${tipo}"][data-diff-periodo="${periodo}"]`);
+        if (diffCell) {
+            if (tipo === 'excedente') {
+                let diff = precioUser - precioActual;
+                if (diff > 0) {
+                    diffCell.textContent = `+${diff.toFixed(7)} €`;
+                    diffCell.className = 'py-2.5 px-4 text-right font-semibold text-emerald-600';
+                } else if (diff < 0) {
+                    diffCell.textContent = `${diff.toFixed(7)} €`;
+                    diffCell.className = 'py-2.5 px-4 text-right font-semibold text-rose-600';
+                } else {
+                    diffCell.textContent = `+0.0000000 €`;
+                    diffCell.className = 'py-2.5 px-4 text-right font-semibold text-slate-400';
+                }
+            } else {
+                let diff = precioActual - precioUser; // Si el usuario pone un precio menor, es una rebaja (ahorro)
+                if (precioUser < precioActual) {
+                    diffCell.textContent = `-${(precioActual - precioUser).toFixed(7)} €`;
+                    diffCell.className = 'py-2.5 px-4 text-right font-semibold text-emerald-600';
+                } else if (precioUser > precioActual) {
+                    diffCell.textContent = `+${(precioUser - precioActual).toFixed(7)} €`;
+                    diffCell.className = 'py-2.5 px-4 text-right font-semibold text-rose-600';
+                } else {
+                    diffCell.textContent = `-0.0000000 €`;
+                    diffCell.className = 'py-2.5 px-4 text-right font-semibold text-slate-400';
+                }
+            }
+        }
     });
 
     // 1. Recuperamos los datos globales desde la respuesta limpia de la Edge Function
