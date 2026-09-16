@@ -91,45 +91,68 @@ function ejecutarSimulacionMejora() {
     const tarifaRival = mercadoFiltrado()[selectRivalIndex];
     const tarifaRenovacion = datosAnalisisGlobal.tarifa_renovacion;
     const estrategia = document.getElementById('select-estrategia').value;
-    const margenSeguridad = parseFloat(document.getElementById('range-intensidad').value);
+    const margenSeguridad = parseFloat(document.getElementById('range-intensidad').value) || 0;
+
+    const kwh = datosAnalisisGlobal.resumen_energia || { punta: 0, llano: 0, valle: 0, excedentes: 0 };
+    
+    // Costes actuales de referencia de la rival
+    const costeActualEnergia = (kwh.punta * (tarifaRival.punta || 0)) +
+                               (kwh.llano * (tarifaRival.llano || 0)) +
+                               (kwh.valle * (tarifaRival.valle || 0));
+
+    const potPuntaW = datosAnalisisGlobal.pot_punta_w || 0;
+    const potValleW = datosAnalisisGlobal.pot_valle_w || 0;
+    const factorMeses = datosAnalisisGlobal.factor_meses_fijo || 12;
+    
+    const costeActualPotencia = ((potPuntaW / 1000) * 30 * (tarifaRival.fijo_punta || 0) * factorMeses) +
+                                ((potValleW / 1000) * 30 * (tarifaRival.fijo_valle || 0) * factorMeses);
+
+    const costeActualExcedentes = kwh.excedentes * (tarifaRival.excedente || 0);
+    const costeActualRival = tarifaRival.coste_total;
 
     const costeObjetivo = tarifaRenovacion.coste_total - margenSeguridad;
-    const costeActualRival = tarifaRival.coste_total;
     const recorteNecesario = Math.max(0, costeActualRival - costeObjetivo);
 
     document.getElementById('sim-coste-original').textContent = `${costeActualRival.toFixed(2)} €`;
 
-    let factorDescuento = 0;
-    if (costeActualRival > 0 && recorteNecesario > 0) {
-        if (estrategia === 'mixta') {
-            factorDescuento = recorteNecesario / (tarifaRival.coste_energia + tarifaRival.coste_fijo);
-        } else if (estrategia === 'energia') {
-            factorDescuento = tarifaRival.coste_energia > 0 ? recorteNecesario / tarifaRival.coste_energia : 0;
+    // Factores de ajuste específicos según la estrategia
+    let factorEnergia = 0;
+    let factorPotencia = 0;
+    let incrementoExcedente = 0;
+
+    if (recorteNecesario > 0) {
+        if (estrategia === 'energia') {
+            if (costeActualEnergia > 0) {
+                factorEnergia = Math.min(0.60, recorteNecesario / costeActualEnergia);
+            }
         } else if (estrategia === 'potencia') {
-            factorDescuento = tarifaRival.coste_fijo > 0 ? recorteNecesario / tarifaRival.coste_fijo : 0;
-        } else {
-            factorDescuento = recorteNecesario / (tarifaRival.coste_energia + tarifaRival.coste_fijo);
+            if (costeActualPotencia > 0) {
+                factorPotencia = Math.min(0.60, recorteNecesario / costeActualPotencia);
+            }
+        } else if (estrategia === 'excedentes') {
+            if (kwh.excedentes > 0) {
+                // Para reducir el coste total, aumentamos el precio de excedentes
+                incrementoExcedente = recorteNecesario / kwh.excedentes;
+            }
+        } else if (estrategia === 'mixta') {
+            const baseMix = costeActualEnergia + costeActualPotencia;
+            if (baseMix > 0) {
+                const fMix = Math.min(0.50, recorteNecesario / baseMix);
+                factorEnergia = fMix;
+                factorPotencia = fMix;
+            }
         }
     }
 
-    factorDescuento = Math.min(0.40, Math.max(0, factorDescuento));
-
-    let ahorroCalculado = recorteNecesario;
-    let costeNuevoRival = costeActualRival - ahorroCalculado;
-    if (costeNuevoRival < 0) costeNuevoRival = 0;
-
-    document.getElementById('sim-coste-nuevo').textContent = `${costeNuevoRival.toFixed(2)} €`;
-    
-    const diferenciaRenovacion = costeNuevoRival - tarifaRenovacion.coste_total;
-    document.getElementById('sim-diferencia-renovacion').textContent = `(${diferenciaRenovacion <= 0 ? '' : '+'}${diferenciaRenovacion.toFixed(2)} € vs Renovación)`;
-    
-    const ahorroCliente = tarifaRenovacion.coste_total - costeNuevoRival;
-    document.getElementById('sim-ahorro-cliente').textContent = `${ahorroCliente.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
-
-    renderizarTablasDetalladas(tarifaRival, estrategia, factorDescuento);
+    // Renderizar las tablas detalladas pasando los factores o incrementos puros
+    renderizarTablasDetalladas(tarifaRival, estrategia, {
+        factorEnergia,
+        factorPotencia,
+        incrementoExcedente
+    });
 }
 
-function renderizarTablasDetalladas(tarifa, estrategia, factor) {
+function renderizarTablasDetalladas(tarifa, estrategia, ajustes) {
     const tbodyEnergia = document.getElementById('tabla-energia-detallada');
     const tbodyPotencia = document.getElementById('tabla-potencia-detallada');
     const tbodyExcedentes = document.getElementById('tabla-excedentes-detallada');
@@ -138,15 +161,12 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
     tbodyPotencia.innerHTML = '';
     if (tbodyExcedentes) tbodyExcedentes.innerHTML = '';
 
-    document.getElementById('badge-estrategia-aplicada').textContent = `Estrategia: ${estrategia.toUpperCase()} (Ajuste ~${(factor * 100).toFixed(1)}%)`;
+    document.getElementById('badge-estrategia-aplicada').textContent = `Estrategia activa: ${estrategia.toUpperCase()}`;
 
-    const aplicaEnergia = estrategia === 'mixta' || estrategia === 'energia';
-    const aplicaPotencia = estrategia === 'mixta' || estrategia === 'potencia';
-
-    // 1. Desglose de Energía (6 Columnas)
+    // 1. Desglose de Energía
     ['punta', 'llano', 'valle'].forEach(periodo => {
         const precioActual = parseFloat(tarifa[periodo]) || 0; 
-        const rebaja = aplicaEnergia ? precioActual * factor : 0;
+        const rebaja = precioActual * ajustes.factorEnergia;
         const precioNuevo = Math.max(0.0000001, precioActual - rebaja);
         const diffAuto = precioNuevo - precioActual;
 
@@ -160,13 +180,13 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
                     class="input-usuario-precio w-28 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </td>
             <td class="py-2.5 px-4 text-right font-bold text-slate-900">${precioNuevo.toFixed(7)} €</td>
-            <td class="py-2.5 px-4 text-right font-semibold ${diffAuto < 0 ? 'text-emerald-600' : diffAuto > 0 ? 'text-rose-600' : 'text-slate-400'}">${diffAuto <= 0 ? '' : '+'}${diffAuto.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right font-semibold ${diffAuto < 0 ? 'text-emerald-600' : 'text-slate-400'}">${diffAuto < 0 ? diffAuto.toFixed(7) : '-0.0000000'} €</td>
             <td class="py-2.5 px-4 text-right font-semibold text-slate-400" data-diff-tipo="energia" data-diff-periodo="${periodo}">-0.0000000 €</td>
         `;
         tbodyEnergia.appendChild(tr);
     });
 
-    // 2. Desglose de Potencia (6 Columnas)
+    // 2. Desglose de Potencia
     const mapeoPotencia = [
         { key: 'fijo_punta', label: 'p1' },
         { key: 'fijo_valle', label: 'p2' }
@@ -174,7 +194,7 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
 
     mapeoPotencia.forEach(item => {
         const precioActual = parseFloat(tarifa[item.key]) || 0;
-        const rebaja = aplicaPotencia ? precioActual * factor : 0;
+        const rebaja = precioActual * ajustes.factorPotencia;
         const precioNuevo = Math.max(0.0000001, precioActual - rebaja);
         const diffAuto = precioNuevo - precioActual;
 
@@ -188,18 +208,16 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
                     class="input-usuario-precio w-28 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </td>
             <td class="py-2.5 px-4 text-right font-bold text-slate-900">${precioNuevo.toFixed(7)} €</td>
-            <td class="py-2.5 px-4 text-right font-semibold ${diffAuto < 0 ? 'text-emerald-600' : diffAuto > 0 ? 'text-rose-600' : 'text-slate-400'}">${diffAuto <= 0 ? '' : '+'}${diffAuto.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right font-semibold ${diffAuto < 0 ? 'text-emerald-600' : 'text-slate-400'}">${diffAuto < 0 ? diffAuto.toFixed(7) : '-0.0000000'} €</td>
             <td class="py-2.5 px-4 text-right font-semibold text-slate-400" data-diff-tipo="potencia" data-diff-periodo="${item.key}">-0.0000000 €</td>
         `;
         tbodyPotencia.appendChild(tr);
     });
 
-    // 3. Desglose de Excedentes Solares (6 Columnas)
+    // 3. Desglose de Excedentes Solares
     if (tbodyExcedentes) {
         const precioExcedenteActual = parseFloat(tarifa.excedente) || 0;
-        const aplicaExcedentes = estrategia === 'mixta' || estrategia === 'excedentes';
-        const mejoraExcedente = aplicaExcedentes ? precioExcedenteActual * (factor * 0.5) : 0;
-        const precioExcedenteNuevo = precioExcedenteActual + mejoraExcedente;
+        const precioExcedenteNuevo = precioExcedenteActual + ajustes.incrementoExcedente;
         const diffAutoEx = precioExcedenteNuevo - precioExcedenteActual;
 
         const trEx = document.createElement('tr');
@@ -212,7 +230,7 @@ function renderizarTablasDetalladas(tarifa, estrategia, factor) {
                     class="input-usuario-precio w-28 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </td>
             <td class="py-2.5 px-4 text-right font-bold text-slate-900">${precioExcedenteNuevo.toFixed(7)} €</td>
-            <td class="py-2.5 px-4 text-right font-semibold ${diffAutoEx > 0 ? 'text-emerald-600' : diffAutoEx < 0 ? 'text-rose-600' : 'text-slate-400'}">${diffAutoEx >= 0 ? '+' : ''}${diffAutoEx.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right font-semibold ${diffAutoEx > 0 ? 'text-emerald-600' : 'text-slate-400'}">${diffAutoEx >= 0 ? '+' : ''}${diffAutoEx.toFixed(7)} €</td>
             <td class="py-2.5 px-4 text-right font-semibold text-slate-400" data-diff-tipo="excedente" data-diff-periodo="excedente">+0.0000000 €</td>
         `;
         tbodyExcedentes.appendChild(trEx);
