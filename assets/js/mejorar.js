@@ -37,6 +37,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('btn-volver').href = `../analisis/analisistarifas.html`;
 
+    // Listener para el checkbox de copiar precios nuevos automáticamente
+    const checkCopiarNuevos = document.getElementById('check-copiar-nuevos');
+    if (checkCopiarNuevos) {
+        checkCopiarNuevos.addEventListener('change', function() {
+            const usarNuevos = this.checked;
+            document.querySelectorAll('.input-usuario-precio').forEach(input => {
+                const precioActual = input.getAttribute('data-precio-actual');
+                const precioNuevo = input.getAttribute('data-precio-nuevo');
+                input.value = parseFloat(usarNuevos ? precioNuevo : precioActual).toFixed(7);
+            });
+            calcularCosteConPreciosUsuario();
+        });
+    }
+
     try {
         const { data, error } = await supabase.functions.invoke('analisis-tarifas', {
             body: { 
@@ -105,14 +119,6 @@ function ejecutarSimulacionMejora() {
         labelCosteNuevo.textContent = `${costeObjetivoContraoferta.toFixed(2)} €`;
     }
 
-    /*
-    const labelDiffRenovacion = document.getElementById('sim-diferencia-renovacion');
-    if (labelDiffRenovacion) {
-        const diffRenov = costeObjetivoContraoferta - tarifaRenovacion.coste_total;
-        labelDiffRenovacion.textContent = `(${diffRenov <= 0 ? '' : '+'}${diffRenov.toFixed(2)} € vs Renovación)`;
-    }
-    */
-
     // Costes base actuales de la rival por componentes
     const cEnergiaBase = (kwh.punta * (tarifaRival.punta || 0)) +
                          (kwh.llano * (tarifaRival.llano || 0)) +
@@ -142,6 +148,10 @@ function ejecutarSimulacionMejora() {
             }
         }
     }
+
+    // Cada vez que se recalcula la simulación, desmarcamos el checkbox por limpieza
+    const checkCopiarNuevos = document.getElementById('check-copiar-nuevos');
+    if (checkCopiarNuevos) checkCopiarNuevos.checked = false;
 
     renderizarTablasDetalladas(tarifaRival, estrategia, {
         factorEnergia,
@@ -174,7 +184,8 @@ function renderizarTablasDetalladas(tarifa, estrategia, ajustes) {
             <td class="py-2.5 px-4 font-medium uppercase text-slate-700">${periodo}</td>
             <td class="py-2.5 px-4 text-right text-slate-600">${precioActual.toFixed(7)} €</td>
             <td class="py-2.5 px-4 text-right">
-                <input type="number" step="0.0000001" data-tipo="energia" data-periodo="${periodo}" data-precio-actual="${precioActual}"
+                <input type="number" step="0.0000001" data-tipo="energia" data-periodo="${periodo}" 
+                    data-precio-actual="${precioActual}" data-precio-nuevo="${precioNuevo}"
                     value="${precioActual.toFixed(7)}" 
                     class="input-usuario-precio w-32 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </td>
@@ -207,7 +218,8 @@ function renderizarTablasDetalladas(tarifa, estrategia, ajustes) {
             <td class="py-2.5 px-4 font-medium uppercase text-slate-700">${item.label}</td>
             <td class="py-2.5 px-4 text-right text-slate-600">${precioActual.toFixed(7)} €</td>
             <td class="py-2.5 px-4 text-right">
-                <input type="number" step="0.0000001" data-tipo="potencia" data-periodo="${item.key}" data-precio-actual="${precioActual}"
+                <input type="number" step="0.0000001" data-tipo="potencia" data-periodo="${item.key}" 
+                    data-precio-actual="${precioActual}" data-precio-nuevo="${precioNuevo}"
                     value="${precioActual.toFixed(7)}" 
                     class="input-usuario-precio w-32 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </td>
@@ -234,7 +246,8 @@ function renderizarTablasDetalladas(tarifa, estrategia, ajustes) {
             <td class="py-2.5 px-4 font-medium uppercase text-slate-700">Excedentes Solares</td>
             <td class="py-2.5 px-4 text-right text-slate-600">${precioExcedenteActual.toFixed(7)} €</td>
             <td class="py-2.5 px-4 text-right">
-                <input type="number" step="0.0000001" data-tipo="excedente" data-periodo="excedente" data-precio-actual="${precioExcedenteActual}"
+                <input type="number" step="0.0000001" data-tipo="excedente" data-periodo="excedente" 
+                    data-precio-actual="${precioExcedenteActual}" data-precio-nuevo="${precioExcedenteNuevo}"
                     value="${precioExcedenteActual.toFixed(7)}" 
                     class="input-usuario-precio w-32 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </td>
