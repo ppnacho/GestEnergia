@@ -269,8 +269,8 @@ function calcularCosteConPreciosUsuario() {
 
     // 3. Cálculo exacto del coste fijo de potencia con los precios nuevos del usuario
     let pPotencia = preciosUser['potencia'] || {};
-    let precioFijoPuntaUser = pPotencia.punta ?? tarifaRival.fijo_punta; // Asumiendo data-periodo="punta" / "valle" en los inputs de potencia
-    let precioFijoValleUser = pPotencia.valle ?? tarifaRival.fijo_valle;
+    let precioFijoPuntaUser = pPotencia.fijo_punta ?? pPotencia.punta ?? tarifaRival.fijo_punta;
+    let precioFijoValleUser = pPotencia.fijo_valle ?? pPotencia.valle ?? tarifaRival.fijo_valle;
 
     let costeFijoPuntaUser = (potPuntaW / 1000) * 30 * precioFijoPuntaUser * factorMeses;
     let costeFijoValleUser = (potValleW / 1000) * 30 * precioFijoValleUser * factorMeses;
