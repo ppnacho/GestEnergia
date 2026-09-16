@@ -105,11 +105,13 @@ function ejecutarSimulacionMejora() {
         labelCosteNuevo.textContent = `${costeObjetivoContraoferta.toFixed(2)} €`;
     }
 
+    <!--
     const labelDiffRenovacion = document.getElementById('sim-diferencia-renovacion');
     if (labelDiffRenovacion) {
         const diffRenov = costeObjetivoContraoferta - tarifaRenovacion.coste_total;
         labelDiffRenovacion.textContent = `(${diffRenov <= 0 ? '' : '+'}${diffRenov.toFixed(2)} € vs Renovación)`;
     }
+    -->
 
     // Costes base actuales de la rival por componentes
     const cEnergiaBase = (kwh.punta * (tarifaRival.punta || 0)) +
