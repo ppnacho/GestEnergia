@@ -1,10 +1,11 @@
-// assets/js/login.js - Lógica de autenticación usando DNI
+// assets/js/login.js - Lógica de autenticación usando DNI y Passkey
 import { supabase } from './supabaseClient.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const loginError = document.getElementById('loginError');
 
+    // 1. Login tradicional por DNI y Contraseña
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -50,7 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error("Error en el login:", error);
                 
-                // Mostramos el mensaje exacto si viene de la cuenta inactiva o uno genérico si fallan credenciales
                 const mensajeError = error.message.includes('pendiente de activación') 
                     ? error.message 
                     : "Acceso denegado: DNI o contraseña incorrectos.";
@@ -59,6 +59,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 submitButton.textContent = originalText;
                 submitButton.disabled = false;
+            }
+        });
+    }
+
+    // 2. NUEVO: Login rápido con Huella Dactilar (Passkey)
+    const btnLoginPasskey = document.getElementById('btn-login-passkey');
+    if (btnLoginPasskey) {
+        btnLoginPasskey.addEventListener('click', async () => {
+            loginError.textContent = '';
+
+            try {
+                // Inicia la ceremonia biométrica nativa del navegador/sistema
+                const { data, error } = await supabase.auth.signInWithPasskey();
+
+                if (error) throw error;
+
+                // Al igual que en el login normal, comprobamos que el usuario esté activo tras loguearse con la huella
+                const { data: checkData, error: checkError } = await supabase.functions.invoke('check-user');
+
+                if (checkError || !checkData || checkData.activo !== true) {
+                    await supabase.auth.signOut();
+                    throw new Error("Tu cuenta está pendiente de activación por un administrador.");
+                }
+
+                // Si todo es correcto, redirigimos al panel
+                window.location.href = "gestion/gestenergetica.html";
+
+            } catch (error) {
+                console.error("Error al iniciar sesión con huella:", error);
+                
+                const mensajeError = error.message.includes('pendiente de activación')
+                    ? error.message
+                    : "No se pudo autenticar con la huella dactilar.";
+                
+                loginError.textContent = mensajeError;
             }
         });
     }
