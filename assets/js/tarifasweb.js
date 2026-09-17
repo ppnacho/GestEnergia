@@ -18,18 +18,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Extraer la lista de tarifas (manejando si vienen en un objeto { tarifas: [...] } o directamente como array)
         const listaTarifas = Array.isArray(data) ? data : (data.tarifas || []);
 
-        // Filtrar estrictamente los registros donde fv.precioBV sea mayor que 0
+        // Filtrar estrictamente los registros donde fv.precioBV sea igual a 0 (o no esté definido / sea nulo)
         const tarifasFiltradas = listaTarifas.filter(tarifa => {
           const fv = tarifa.fv;
-          if (!fv) return false;
-          return Number(fv.precioBV) > 0;
+          if (!fv) return true; // Si no tiene bloque fv, se considera sin BV (precio 0)
+          const precioBV = Number(fv.precioBV);
+          return isNaN(precioBV) || precioBV === 0;
         });
 
         contenedorResultado.classList.remove('loading');
         contenedorResultado.innerHTML = "";
 
         if (tarifasFiltradas.length === 0) {
-          contenedorResultado.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 2rem;">No se encontraron tarifas con Batería Virtual activa (precio BV > 0).</p>`;
+          contenedorResultado.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 2rem;">No se encontraron tarifas con precio de Batería Virtual a 0.</p>`;
           return;
         }
 
@@ -74,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             <div class="tarifa-campo">
                 <label>Precio BV</label>
-                <span style="color: #38bdf8; font-weight: bold;">${fv.precioBV !== undefined ? fv.precioBV + ' €' : '—'}</span>
+                <span style="color: #38bdf8; font-weight: bold;">${fv.precioBV !== undefined ? fv.precioBV + ' €' : '0 €'}</span>
             </div>
           `;
 
