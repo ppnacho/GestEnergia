@@ -19,12 +19,26 @@ document.addEventListener('DOMContentLoaded', () => {
         // Extraer la lista de tarifas (manejando si vienen en un objeto { tarifas: [...] } o directamente como array)
         const listaTarifas = Array.isArray(data) ? data : (data.tarifas || []);
 
-        // Filtrar estrictamente los registros donde fv.precioBV sea igual a 0 (o no esté definido / sea nulo)
+        // Filtrar estrictamente: 
+        // 1. fv.precioBV sea igual a 0 (o no esté definido / sea nulo)
+        // 2. fv.exc NO sea menor que 0 (si existe)
         const tarifasFiltradas = listaTarifas.filter(tarifa => {
-          const fv = tarifa.fv;
-          if (!fv) return true; // Si no tiene bloque fv, se considera sin BV (precio 0)
+          const fv = tarifa.fv || {};
+          
+          // Filtro Precio BV === 0
           const precioBV = Number(fv.precioBV);
-          return isNaN(precioBV) || precioBV === 0;
+          const cumpleBV = !fv.precioBV || isNaN(precioBV) || precioBV === 0;
+
+          // Filtro Excedentes (exc) >= 0 (si el campo exc está presente)
+          let cumpleExc = true;
+          if (fv.exc !== undefined && fv.exc !== null && fv.exc !== '') {
+            const valorExc = Number(fv.exc);
+            if (!isNaN(valorExc) && valorExc < 0) {
+              cumpleExc = false;
+            }
+          }
+
+          return cumpleBV && cumpleExc;
         });
 
         // Contabilizar tipos 1P y 3P (campo fuera de fv)
@@ -48,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
         contenedorResultado.innerHTML = "";
 
         if (tarifasFiltradas.length === 0) {
-          contenedorResultado.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 2rem;">No se encontraron tarifas con precio de Batería Virtual a 0.</p>`;
+          contenedorResultado.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 2rem;">No se encontraron tarifas con los criterios seleccionados.</p>`;
           return;
         }
 
