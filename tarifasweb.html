@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Carga de Tarifas</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background-color: #f6f8fa;
+            color: #24292e;
+        }
+        h1 {
+            border-bottom: 1px solid #eaecef;
+            padding-bottom: 10px;
+        }
+        #resultado {
+            background: #ffffff;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 20px;
+            white-space: pre-wrap;
+            font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace;
+            font-size: 13px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .loading {
+            color: #0366d6;
+            font-style: italic;
+        }
+        .error {
+            color: #d73a49;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Prueba de Carga de Tarifas desde GitHub</h1>
+    <p>Estado de la carga del fichero JSON:</p>
+    
+    <div id="resultado" class="loading">Cargando datos...</div>
+
+    <!-- Enlace al fichero JavaScript externo -->
+    <script src="../assets/js/tarifasweb.js"></script>
+</body>
+</html>
