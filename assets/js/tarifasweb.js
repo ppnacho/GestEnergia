@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // URL RAW de GitHub para obtener el JSON de tarifas
     const urlTarifas = 'https://raw.githubusercontent.com/almax-es/luzfija.es/main/tarifas.json';
     const contenedorResultado = document.getElementById('resultado');
+    const contenedorContador = document.getElementById('contador-tarifas');
 
     if (!contenedorResultado) return;
 
@@ -26,6 +27,23 @@ document.addEventListener('DOMContentLoaded', () => {
           return isNaN(precioBV) || precioBV === 0;
         });
 
+        // Contabilizar tipos 1P y 3P (campo fuera de fv)
+        let count1P = 0;
+        let count3P = 0;
+
+        tarifasFiltradas.forEach(tarifa => {
+          if (tarifa.tipo === '1P') {
+            count1P++;
+          } else if (tarifa.tipo === '3P') {
+            count3P++;
+          }
+        });
+
+        // Actualizar el texto del contador en el HTML
+        if (contenedorContador) {
+          contenedorContador.textContent = `Mostrando ${tarifasFiltradas.length} tarifas en total (Tipo 1P: ${count1P} | Tipo 3P: ${count3P})`;
+        }
+
         contenedorResultado.classList.remove('loading');
         contenedorResultado.innerHTML = "";
 
@@ -41,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
           cardItem.className = "tarifa-item-card";
 
           cardItem.innerHTML = `
-            <div class="tarifa-titulo-completo">${tarifa.nombre || 'Tarifa sin nombre'}</div>
+            <div class="tarifa-titulo-completo">${tarifa.nombre || 'Tarifa sin nombre'} <span style="font-size: 0.75rem; color: #94a3b8; font-weight: normal; margin-left: 8px;">[${tarifa.tipo || 'N/D'}]</span></div>
             
             <div class="tarifa-campo">
                 <label>Consumo Punta</label>
