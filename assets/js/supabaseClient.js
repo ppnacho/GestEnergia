@@ -7,4 +7,10 @@ const SUPABASE_URL = 'https://vxhzwsgcdgbapzdkhqlm.supabase.co';
 // 2. Pega aquí tu clave PÚBLICA (anon / public)
 const SUPABASE_ANON_KEY = 'sb_publishable_xsCLd0Res-_FVrstP5UJAA_cdpFuovw';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    experimental: {
+      passkey: true
+    }
+  }
+);
