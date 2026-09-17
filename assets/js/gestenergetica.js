@@ -16,9 +16,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // --- NUEVO: Manejador para registrar la huella dactilar ---
+    // --- COMPROBAR SOPORTE BIOMÉTRICO PARA OCULTAR BOTÓN SI NO ES COMPATIBLE ---
     const btnRegisterPasskey = document.getElementById('btn-register-passkey');
     if (btnRegisterPasskey) {
+        try {
+            if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+                const disponible = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+                if (!disponible) {
+                    btnRegisterPasskey.style.display = 'none';
+                }
+            } else {
+                btnRegisterPasskey.style.display = 'none';
+            }
+        } catch (error) {
+            console.error("Error al comprobar soporte biométrico:", error);
+            btnRegisterPasskey.style.display = 'none';
+        }
+
+        // --- Manejador para registrar la huella dactilar ---
         btnRegisterPasskey.addEventListener('click', async () => {
             try {
                 const { data, error } = await supabase.auth.registerPasskey();
@@ -33,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
-    // ---------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
