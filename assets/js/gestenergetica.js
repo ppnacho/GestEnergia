@@ -16,6 +16,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // --- NUEVO: Manejador para registrar la huella dactilar ---
+    const btnRegisterPasskey = document.getElementById('btn-register-passkey');
+    if (btnRegisterPasskey) {
+        btnRegisterPasskey.addEventListener('click', async () => {
+            try {
+                const { data, error } = await supabase.auth.registerPasskey();
+
+                if (error) throw error;
+
+                console.log("Passkey registrada con éxito:", data);
+                alert("¡Tu huella se ha vinculado correctamente a tu cuenta!");
+            } catch (error) {
+                console.error("Error al registrar la huella:", error.message);
+                alert("No se pudo registrar la huella: " + error.message);
+            }
+        });
+    }
+    // ---------------------------------------------------------
+
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
