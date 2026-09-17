@@ -1,9 +1,28 @@
 // assets/js/login.js - Lógica de autenticación usando DNI y Passkey
 import { supabase } from './supabaseClient.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const loginForm = document.getElementById('loginForm');
     const loginError = document.getElementById('loginError');
+    const btnLoginPasskey = document.getElementById('btn-login-passkey');
+
+    // --- COMPROBAR SOPORTE BIOMÉTRICO PARA OCULTAR BOTÓN SI NO ES COMPATIBLE ---
+    if (btnLoginPasskey) {
+        try {
+            if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+                const disponible = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+                if (!disponible) {
+                    btnLoginPasskey.style.display = 'none';
+                }
+            } else {
+                btnLoginPasskey.style.display = 'none';
+            }
+        } catch (error) {
+            console.error("Error al comprobar soporte biométrico:", error);
+            btnLoginPasskey.style.display = 'none';
+        }
+    }
+    // -------------------------------------------------------------------------
 
     // 1. Login tradicional por DNI y Contraseña
     if (loginForm) {
@@ -63,8 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 2. NUEVO: Login rápido con Huella Dactilar (Passkey)
-    const btnLoginPasskey = document.getElementById('btn-login-passkey');
+    // 2. Login rápido con Huella Dactilar (Passkey)
     if (btnLoginPasskey) {
         btnLoginPasskey.addEventListener('click', async () => {
             loginError.textContent = '';
