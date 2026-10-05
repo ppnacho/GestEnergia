@@ -1,8 +1,8 @@
 name: Supabase Keep Alive
 
 on:
+  # Se ejecuta 4 veces al día (cada 6 horas: 00:00, 06:00, 12:00, 18:00 UTC)
   schedule:
-    # Se ejecuta 4 veces al día (cada 6 horas: 00:00, 06:00, 12:00, 18:00 UTC)
     - cron: '0 */6 * * *'
   # Permite ejecutar manualmente la tarea desde la pestaña Actions en GitHub
   workflow_dispatch:
@@ -13,6 +13,6 @@ jobs:
     steps:
       - name: Consulta SELECT a la base de datos de Supabase
         run: |
-          curl -i -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/socios?select=*&limit=1" \
+          curl -i -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/consumos?select=*&limit=1" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
