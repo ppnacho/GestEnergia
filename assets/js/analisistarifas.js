@@ -229,11 +229,20 @@ function ahorrioFormateado(num) {
 function renderizarGrafico(renovacion, mercado) {
     const ctx = document.getElementById('chartComparativa').getContext('2d')
 
-    const labels = [renovacion.nombre, ...mercado.map(t => t.nombre)]
-    const costesFijos = [renovacion.coste_fijo, ...mercado.map(t => t.coste_fijo)]
-    const costesEnergia = [renovacion.coste_energia, ...mercado.map(t => t.coste_energia)]
-    // Asumiendo que cada tarifa trae un campo `coste_excedentes` (positivo, que se pintará separado o restando)
-    const costesExcedentes = [renovacion.coste_excedentes || 0, ...mercado.map(t => t.coste_excedentes || 0)]
+    // Limitar el mercado gráfico a un máximo de 10 tarifas (el ranking de abajo mantiene todas)
+    const mercadoTop10 = mercado.slice(0, 10)
+
+    const labels = [renovacion.nombre, ...mercadoTop10.map(t => t.nombre)]
+    const costesFijos = [renovacion.coste_fijo, ...mercadoTop10.map(t => t.coste_fijo)]
+    const costesEnergia = [renovacion.coste_energia, ...mercadoTop10.map(t => t.coste_energia)]
+    const costesExcedentes = [renovacion.coste_excedentes || 0, ...mercadoTop10.map(t => t.coste_excedentes || 0)]
+
+    // Opcional: Ajustar dinámicamente el ancho mínimo del contenedor según la cantidad de barras
+    const contenedorGrafico = document.getElementById('chart-scroll-container')
+    if (contenedorGrafico) {
+        const minWidth = Math.max(800, (labels.length * 75)) // ~75px por columna para que no se apelotonen
+        contenedorGrafico.style.minWidth = `${minWidth}px`
+    }
 
     if (chartInstance) {
         chartInstance.destroy()
@@ -260,10 +269,9 @@ function renderizarGrafico(renovacion, mercado) {
                 },
                 {
                     label: 'Excedentes (Descuento)',
-                    data: costesExcedentes.map(val => -val), // Negativo para que cuelgue hacia abajo o se diferencie claramente
+                    data: costesExcedentes.map(val => -val),
                     backgroundColor: '#34d399',
                     borderRadius: 4,
-                    // Propiedades para hacerla una barra más estrecha y separada (agrupada al lado)
                     stack: 'stack1',
                     barPercentage: 0.5,
                     categoryPercentage: 0.6
@@ -287,7 +295,10 @@ function renderizarGrafico(renovacion, mercado) {
                 }
             },
             scales: {
-                x: { grid: { display: false } },
+                x: { 
+                    grid: { display: false },
+                    ticks: { font: { size: 11 } }
+                },
                 y: { grid: { color: '#f1f5f9' } }
             }
         }
