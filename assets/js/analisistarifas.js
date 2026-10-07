@@ -226,81 +226,89 @@ function ahorrioFormateado(num) {
     return num.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+// Declaramos dos variables globales para las instancias de los gráficos
+let chartRenovacionInstance = null;
+let chartMercadoInstance = null;
+
 function renderizarGrafico(renovacion, mercado) {
-    const ctx = document.getElementById('chartComparativa').getContext('2d')
+    const ctxRenovacion = document.getElementById('chartRenovacionFija').getContext('2d')
+    const ctxMercado = document.getElementById('chartMercadoScroll').getContext('2d')
 
-    // 1. USAMOS TODO EL MERCADO (sin recortar): se pintan TODAS las tarifas de la respuesta
-    const labels = [renovacion.nombre, ...mercado.map(t => t.nombre)]
-    const costesFijos = [renovacion.coste_fijo, ...mercado.map(t => t.coste_fijo)]
-    const costesEnergia = [renovacion.coste_energia, ...mercado.map(t => t.coste_energia)]
-    const costesExcedentes = [renovacion.coste_excedentes || 0, ...mercado.map(t => t.coste_excedentes || 0)]
+    // --- 1. DATOS DE LA TARIFA FIJA (Renovación) ---
+    const labelRenovacion = [renovacion.nombre]
+    const costeFijoRenov = [renovacion.coste_fijo]
+    const costeEnergiaRenov = [renovacion.coste_energia]
+    const costeExcedentesRenov = [renovacion.coste_excedentes || 0]
 
-    // 2. AMPLIAMOS EL CONTENEDOR DINÁMICAMENTE: 
-    // Cuantas más tarifas haya, más ancho se hace el contenedor para que las barras no se compriman.
+    // --- 2. DATOS DEL MERCADO (El resto de tarifas) ---
+    const labelsMercado = mercado.map(t => t.nombre)
+    const costesFijosMercado = mercado.map(t => t.coste_fijo)
+    const costesEnergiaMercado = mercado.map(t => t.coste_energia)
+    const costesExcedentesMercado = mercado.map(t => t.coste_excedentes || 0)
+
+    // Ajustar el ancho dinámico del contenedor de mercado según cuántas tarifas haya
     const contenedorGrafico = document.getElementById('chart-scroll-container')
     if (contenedorGrafico) {
-        const minWidth = Math.max(1100, (labels.length * 90)) // ~90px por cada barra/tarifa
+        const minWidth = Math.max(800, (labelsMercado.length * 90)) // ~90px por barra del mercado
         contenedorGrafico.style.minWidth = `${minWidth}px`
     }
 
-    if (chartInstance) {
-        chartInstance.destroy()
-    }
+    // Destruir gráficos anteriores si ya existían para evitar solapamientos
+    if (chartRenovacionInstance) chartRenovacionInstance.destroy()
+    if (chartMercadoInstance) chartMercadoInstance.destroy()
 
-    chartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Coste Fijo (Potencia)',
-                    data: costesFijos,
-                    backgroundColor: '#cbd5e1',
-                    borderRadius: 4,
-                    stack: 'stack0'
-                },
-                {
-                    label: 'Coste Variable (Energía)',
-                    data: costesEnergia,
-                    backgroundColor: '#059669',
-                    borderRadius: 4,
-                    stack: 'stack0'
-                },
-                {
-                    label: 'Excedentes (Descuento)',
-                    data: costesExcedentes.map(val => -val),
-                    backgroundColor: '#34d399',
-                    borderRadius: 4,
-                    stack: 'stack1',
-                    barPercentage: 0.5,
-                    categoryPercentage: 0.6
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: { font: { family: 'Inter', size: 12 } }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return ` ${context.dataset.label}: ${Math.abs(context.raw).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`;
-                        }
+    // Opciones comunes para alinear escalas y que visualmente parezca un único gráfico continuo
+    const opcionesComunes = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }, // Ocultamos la leyenda duplicada para limpieza visual
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return ` ${context.dataset.label}: ${Math.abs(context.raw).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`;
                     }
                 }
+            }
+        },
+        scales: {
+            x: { 
+                grid: { display: false },
+                ticks: { font: { size: 11 } }
             },
-            scales: {
-                x: { 
-                    grid: { display: false },
-                    ticks: { font: { size: 11 } }
-                },
-                y: { grid: { color: '#f1f5f9' } }
+            y: { 
+                grid: { color: '#f1f5f9' },
+                beginAtZero: true
             }
         }
+    }
+
+    // --- RENDERIZAR GRÁFICO 1: Renovación (Fijo) ---
+    chartRenovacionInstance = new Chart(ctxRenovacion, {
+        type: 'bar',
+        data: {
+            labels: labelRenovacion,
+            datasets: [
+                { label: 'Coste Fijo (Potencia)', data: costeFijoRenov, backgroundColor: '#cbd5e1', borderRadius: 4, stack: 'stack0' },
+                { label: 'Coste Variable (Energía)', data: costeEnergiaRenov, backgroundColor: '#059669', borderRadius: 4, stack: 'stack0' },
+                { label: 'Excedentes (Descuento)', data: costeExcedentesRenov.map(v => -v), backgroundColor: '#34d399', borderRadius: 4, stack: 'stack1', barPercentage: 0.5, categoryPercentage: 0.6 }
+            ]
+        },
+        options: opcionesComunes
+    })
+
+    // --- RENDERIZAR GRÁFICO 2: Mercado (Con Scroll) ---
+    chartMercadoInstance = new Chart(ctxMercado, {
+        type: 'bar',
+        data: {
+            labels: labelsMercado,
+            datasets: [
+                { label: 'Coste Fijo (Potencia)', data: costesFijosMercado, backgroundColor: '#cbd5e1', borderRadius: 4, stack: 'stack0' },
+                { label: 'Coste Variable (Energía)', data: costesEnergiaMercado, backgroundColor: '#059669', borderRadius: 4, stack: 'stack0' },
+                { label: 'Excedentes (Descuento)', data: costesExcedentesMercado.map(v => -v), backgroundColor: '#34d399', borderRadius: 4, stack: 'stack1', barPercentage: 0.5, categoryPercentage: 0.6 }
+            ]
+        },
+        options: opcionesComunes
     })
 }
 
