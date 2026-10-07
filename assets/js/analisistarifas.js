@@ -233,16 +233,14 @@ function renderizarGrafico(renovacion, mercado) {
     const ctxRenovacion = document.getElementById('chartRenovacionFija').getContext('2d')
     const ctxMercado = document.getElementById('chartMercadoScroll').getContext('2d')
 
-    // --- 1. RECOPILAR TODOS LOS DATOS PARA CALCULAR ESCALAS UNIFICADAS ---
+    // --- 1. RECOPILAR DATOS Y CALCULAR ESCALAS UNIFICADAS ---
     const allCostesFijos = [renovacion.coste_fijo, ...mercado.map(t => t.coste_fijo)]
     const allCostesEnergia = [renovacion.coste_energia, ...mercado.map(t => t.coste_energia)]
     const allCostesExcedentes = [renovacion.coste_excedentes || 0, ...mercado.map(t => t.coste_excedentes || 0)]
 
-    // Calcular el coste neto total (Fijo + Energía - Excedentes) para cada elemento para hallar el pico máximo real
     const maxValores = allCostesFijos.map((f, i) => f + allCostesEnergia[i] - allCostesExcedentes[i])
-    const minValores = allCostesExcedentes.map(e => -e) // Para los excedentes negativos
+    const minValores = allCostesExcedentes.map(e => -e)
 
-    // Definir un techo y suelo comunes con un pequeño margen estético (ej: 10% extra arriba)
     const yMax = Math.ceil(Math.max(...maxValores) * 1.1)
     const yMin = Math.floor(Math.min(...minValores) * 1.1)
 
@@ -252,13 +250,12 @@ function renderizarGrafico(renovacion, mercado) {
     const costeEnergiaRenov = [renovacion.coste_energia]
     const costeExcedentesRenov = [renovacion.coste_excedentes || 0]
 
-    // --- 3. DATOS DEL MERCADO (El resto de tarifas) ---
+    // --- 3. DATOS DEL MERCADO ---
     const labelsMercado = mercado.map(t => t.nombre)
     const costesFijosMercado = mercado.map(t => t.coste_fijo)
     const costesEnergiaMercado = mercado.map(t => t.coste_energia)
     const costesExcedentesMercado = mercado.map(t => t.coste_excedentes || 0)
 
-    // Ajustar el ancho dinámico del contenedor con scroll
     const contenedorGrafico = document.getElementById('chart-scroll-container')
     if (contenedorGrafico) {
         const minWidth = Math.max(800, (labelsMercado.length * 90))
@@ -268,10 +265,13 @@ function renderizarGrafico(renovacion, mercado) {
     if (chartRenovacionInstance) chartRenovacionInstance.destroy()
     if (chartMercadoInstance) chartMercadoInstance.destroy()
 
-    // Opciones comunes inyectando el min y max calculados para sincronizar el Eje Y
-    const opcionesComunes = {
+    // --- 4. OPCIONES ESPECÍFICAS CON EL MISMO PADDING INFERIOR Y ROTACIÓN ---
+    const opcionesRenovacion = {
         responsive: true,
         maintainAspectRatio: false,
+        layout: {
+            padding: { bottom: 25 }
+        },
         plugins: {
             legend: { display: false },
             tooltip: {
@@ -285,17 +285,46 @@ function renderizarGrafico(renovacion, mercado) {
         scales: {
             x: { 
                 grid: { display: false },
-                ticks: { font: { size: 11 } }
+                ticks: { font: { size: 11 }, maxRotation: 15, minRotation: 15 }
             },
             y: { 
                 grid: { color: '#f1f5f9' },
-                min: yMin, // <-- Mismo mínimo sincronizado
-                max: yMax  // <-- Mismo máximo sincronizado
+                min: yMin,
+                max: yMax
             }
         }
-    }
+    };
 
-    // --- RENDERIZAR GRÁFICO 1: Renovación (Fijo) ---
+    const opcionesMercado = {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+            padding: { bottom: 25 }
+        },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return ` ${context.dataset.label}: ${Math.abs(context.raw).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: { 
+                grid: { display: false },
+                ticks: { font: { size: 11 }, maxRotation: 15, minRotation: 15 }
+            },
+            y: { 
+                grid: { color: '#f1f5f9' },
+                min: yMin,
+                max: yMax
+            }
+        }
+    };
+
+    // --- 5. RENDERIZAR AMBOS GRÁFICOS ---
     chartRenovacionInstance = new Chart(ctxRenovacion, {
         type: 'bar',
         data: {
@@ -306,10 +335,9 @@ function renderizarGrafico(renovacion, mercado) {
                 { label: 'Excedentes (Descuento)', data: costeExcedentesRenov.map(v => -v), backgroundColor: '#34d399', borderRadius: 4, stack: 'stack1', barPercentage: 0.5, categoryPercentage: 0.6 }
             ]
         },
-        options: opcionesComunes
+        options: opcionesRenovacion
     })
 
-    // --- RENDERIZAR GRÁFICO 2: Mercado (Con Scroll) ---
     chartMercadoInstance = new Chart(ctxMercado, {
         type: 'bar',
         data: {
@@ -320,7 +348,7 @@ function renderizarGrafico(renovacion, mercado) {
                 { label: 'Excedentes (Descuento)', data: costesExcedentesMercado.map(v => -v), backgroundColor: '#34d399', borderRadius: 4, stack: 'stack1', barPercentage: 0.5, categoryPercentage: 0.6 }
             ]
         },
-        options: opcionesComunes
+        options: opcionesMercado
     })
 }
 
