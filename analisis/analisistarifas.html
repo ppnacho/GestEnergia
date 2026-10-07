@@ -184,19 +184,31 @@
         </div>
     </div>
 
-            <!-- 2. Gráfico Comparativo Principal -->
+            <!-- 2. Gráfico Comparativo Principal (Con columna fija para Renovación) -->
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <div class="flex items-center justify-between mb-1">
                     <h3 class="text-lg font-bold text-slate-900">Comparativa de Costes (Fijo vs Variable)</h3>
-                    <span class="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-md">Desliza la barra para ver todas las tarifas ➔</span>
+                    <span class="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-md">Renovación fija a la izquierda | Desliza el resto ➔</span>
                 </div>
                 <p class="text-xs text-slate-500 mb-6">Desglose de costes estimados para cada tarifa analizada.</p>
     
-                <!-- Contenedor con scroll horizontal forzado y barra visible -->
-                <div class="overflow-x-auto pb-4 custom-scrollbar border border-slate-100 rounded-xl bg-slate-50/50 p-2">
-                    <div id="chart-scroll-container" class="h-[320px]">
-                        <canvas id="chartComparativa"></canvas>
+                <!-- Contenedor principal en formato Flex (Izquierda fija / Derecha con scroll) -->
+                <div class="flex border border-slate-100 rounded-xl bg-slate-50/50 p-2 overflow-hidden">
+        
+                    <!-- BLOQUE 1: Renovación (Fijo a la izquierda con sombra sutil de separación) -->
+                    <div class="w-[140px] shrink-0 bg-white border-r border-slate-200 pr-2 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.05)] z-10">
+                        <div class="h-[320px]">
+                            <canvas id="chartRenovacionFija"></canvas>
+                        </div>
                     </div>
+
+                    <!-- BLOQUE 2: Mercado (Con scroll horizontal para el resto de tarifas) -->
+                    <div class="overflow-x-auto pb-4 custom-scrollbar grow">
+                        <div id="chart-scroll-container" class="h-[320px]">
+                            <canvas id="chartMercadoScroll"></canvas>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
