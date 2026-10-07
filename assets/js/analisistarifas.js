@@ -265,12 +265,17 @@ function renderizarGrafico(renovacion, mercado) {
     if (chartRenovacionInstance) chartRenovacionInstance.destroy()
     if (chartMercadoInstance) chartMercadoInstance.destroy()
 
-    // --- 4. OPCIONES ESPECÍFICAS CON EL MISMO PADDING INFERIOR Y ROTACIÓN ---
-    const opcionesRenovacion = {
+    // Opciones unificadas y blindadas para ambos gráficos
+    const opcionesSincronizadas = {
         responsive: true,
         maintainAspectRatio: false,
         layout: {
-            padding: { bottom: 25 }
+            padding: {
+                left: 15,
+                right: 15,
+                top: 10,
+                bottom: 30 // Espacio generoso y fijo abajo para las etiquetas inclinadas
+            }
         },
         plugins: {
             legend: { display: false },
@@ -285,41 +290,24 @@ function renderizarGrafico(renovacion, mercado) {
         scales: {
             x: { 
                 grid: { display: false },
-                ticks: { font: { size: 11 }, maxRotation: 15, minRotation: 15 }
-            },
-            y: { 
-                grid: { color: '#f1f5f9' },
-                min: yMin,
-                max: yMax
-            }
-        }
-    };
-
-    const opcionesMercado = {
-        responsive: true,
-        maintainAspectRatio: false,
-        layout: {
-            padding: { bottom: 25 }
-        },
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        return ` ${context.dataset.label}: ${Math.abs(context.raw).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`;
-                    }
+                ticks: { 
+                    font: { size: 11 }, 
+                    maxRotation: 15, 
+                    minRotation: 15 
                 }
-            }
-        },
-        scales: {
-            x: { 
-                grid: { display: false },
-                ticks: { font: { size: 11 }, maxRotation: 15, minRotation: 15 }
             },
             y: { 
                 grid: { color: '#f1f5f9' },
                 min: yMin,
-                max: yMax
+                max: yMax,
+                // TRUCO CLAVE: Forzamos el mismo ancho exacto (en píxeles) para la zona del eje Y 
+                // en ambos gráficos, evitando que se descuadren por la longitud de los números.
+                afterFit: function(scaleInstance) {
+                    scaleInstance.width = 50; // Ancho fijo idéntico para las etiquetas del eje Y
+                },
+                ticks: {
+                    font: { size: 11 }
+                }
             }
         }
     };
@@ -335,7 +323,7 @@ function renderizarGrafico(renovacion, mercado) {
                 { label: 'Excedentes (Descuento)', data: costeExcedentesRenov.map(v => -v), backgroundColor: '#34d399', borderRadius: 4, stack: 'stack1', barPercentage: 0.5, categoryPercentage: 0.6 }
             ]
         },
-        options: opcionesRenovacion
+        options: opcionesSincronizadas
     })
 
     chartMercadoInstance = new Chart(ctxMercado, {
@@ -348,7 +336,7 @@ function renderizarGrafico(renovacion, mercado) {
                 { label: 'Excedentes (Descuento)', data: costesExcedentesMercado.map(v => -v), backgroundColor: '#34d399', borderRadius: 4, stack: 'stack1', barPercentage: 0.5, categoryPercentage: 0.6 }
             ]
         },
-        options: opcionesMercado
+        options: opcionesSincronizadas
     })
 }
 
