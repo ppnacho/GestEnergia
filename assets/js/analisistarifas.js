@@ -229,18 +229,17 @@ function ahorrioFormateado(num) {
 function renderizarGrafico(renovacion, mercado) {
     const ctx = document.getElementById('chartComparativa').getContext('2d')
 
-    // Limitar el mercado gráfico a un máximo de 10 tarifas (el ranking de abajo mantiene todas)
-    const mercadoTop10 = mercado.slice(0, 10)
+    // 1. USAMOS TODO EL MERCADO (sin recortar): se pintan TODAS las tarifas de la respuesta
+    const labels = [renovacion.nombre, ...mercado.map(t => t.nombre)]
+    const costesFijos = [renovacion.coste_fijo, ...mercado.map(t => t.coste_fijo)]
+    const costesEnergia = [renovacion.coste_energia, ...mercado.map(t => t.coste_energia)]
+    const costesExcedentes = [renovacion.coste_excedentes || 0, ...mercado.map(t => t.coste_excedentes || 0)]
 
-    const labels = [renovacion.nombre, ...mercadoTop10.map(t => t.nombre)]
-    const costesFijos = [renovacion.coste_fijo, ...mercadoTop10.map(t => t.coste_fijo)]
-    const costesEnergia = [renovacion.coste_energia, ...mercadoTop10.map(t => t.coste_energia)]
-    const costesExcedentes = [renovacion.coste_excedentes || 0, ...mercadoTop10.map(t => t.coste_excedentes || 0)]
-
-    // Opcional: Ajustar dinámicamente el ancho mínimo del contenedor según la cantidad de barras
+    // 2. AMPLIAMOS EL CONTENEDOR DINÁMICAMENTE: 
+    // Cuantas más tarifas haya, más ancho se hace el contenedor para que las barras no se compriman.
     const contenedorGrafico = document.getElementById('chart-scroll-container')
     if (contenedorGrafico) {
-        const minWidth = Math.max(1300, (labels.length * 110))
+        const minWidth = Math.max(1100, (labels.length * 90)) // ~90px por cada barra/tarifa
         contenedorGrafico.style.minWidth = `${minWidth}px`
     }
 
