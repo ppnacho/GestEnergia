@@ -226,7 +226,6 @@ function ahorrioFormateado(num) {
     return num.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-// Declaramos dos variables globales para las instancias de los gráficos
 let chartRenovacionInstance = null;
 let chartMercadoInstance = null;
 
@@ -234,35 +233,47 @@ function renderizarGrafico(renovacion, mercado) {
     const ctxRenovacion = document.getElementById('chartRenovacionFija').getContext('2d')
     const ctxMercado = document.getElementById('chartMercadoScroll').getContext('2d')
 
-    // --- 1. DATOS DE LA TARIFA FIJA (Renovación) ---
+    // --- 1. RECOPILAR TODOS LOS DATOS PARA CALCULAR ESCALAS UNIFICADAS ---
+    const allCostesFijos = [renovacion.coste_fijo, ...mercado.map(t => t.coste_fijo)]
+    const allCostesEnergia = [renovacion.coste_energia, ...mercado.map(t => t.coste_energia)]
+    const allCostesExcedentes = [renovacion.coste_excedentes || 0, ...mercado.map(t => t.coste_excedentes || 0)]
+
+    // Calcular el coste neto total (Fijo + Energía - Excedentes) para cada elemento para hallar el pico máximo real
+    const maxValores = allCostesFijos.map((f, i) => f + allCostesEnergia[i] - allCostesExcedentes[i])
+    const minValores = allCostesExcedentes.map(e => -e) // Para los excedentes negativos
+
+    // Definir un techo y suelo comunes con un pequeño margen estético (ej: 10% extra arriba)
+    const yMax = Math.ceil(Math.max(...maxValores) * 1.1)
+    const yMin = Math.floor(Math.min(...minValores) * 1.1)
+
+    // --- 2. DATOS DE LA TARIFA FIJA (Renovación) ---
     const labelRenovacion = [renovacion.nombre]
     const costeFijoRenov = [renovacion.coste_fijo]
     const costeEnergiaRenov = [renovacion.coste_energia]
     const costeExcedentesRenov = [renovacion.coste_excedentes || 0]
 
-    // --- 2. DATOS DEL MERCADO (El resto de tarifas) ---
+    // --- 3. DATOS DEL MERCADO (El resto de tarifas) ---
     const labelsMercado = mercado.map(t => t.nombre)
     const costesFijosMercado = mercado.map(t => t.coste_fijo)
     const costesEnergiaMercado = mercado.map(t => t.coste_energia)
     const costesExcedentesMercado = mercado.map(t => t.coste_excedentes || 0)
 
-    // Ajustar el ancho dinámico del contenedor de mercado según cuántas tarifas haya
+    // Ajustar el ancho dinámico del contenedor con scroll
     const contenedorGrafico = document.getElementById('chart-scroll-container')
     if (contenedorGrafico) {
-        const minWidth = Math.max(800, (labelsMercado.length * 90)) // ~90px por barra del mercado
+        const minWidth = Math.max(800, (labelsMercado.length * 90))
         contenedorGrafico.style.minWidth = `${minWidth}px`
     }
 
-    // Destruir gráficos anteriores si ya existían para evitar solapamientos
     if (chartRenovacionInstance) chartRenovacionInstance.destroy()
     if (chartMercadoInstance) chartMercadoInstance.destroy()
 
-    // Opciones comunes para alinear escalas y que visualmente parezca un único gráfico continuo
+    // Opciones comunes inyectando el min y max calculados para sincronizar el Eje Y
     const opcionesComunes = {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { display: false }, // Ocultamos la leyenda duplicada para limpieza visual
+            legend: { display: false },
             tooltip: {
                 callbacks: {
                     label: function(context) {
@@ -278,7 +289,8 @@ function renderizarGrafico(renovacion, mercado) {
             },
             y: { 
                 grid: { color: '#f1f5f9' },
-                beginAtZero: true
+                min: yMin, // <-- Mismo mínimo sincronizado
+                max: yMax  // <-- Mismo máximo sincronizado
             }
         }
     }
