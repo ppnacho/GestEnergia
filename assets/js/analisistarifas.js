@@ -240,7 +240,7 @@ function renderizarGrafico(renovacion, mercado) {
     // Opcional: Ajustar dinámicamente el ancho mínimo del contenedor según la cantidad de barras
     const contenedorGrafico = document.getElementById('chart-scroll-container')
     if (contenedorGrafico) {
-        const minWidth = Math.max(800, (labels.length * 75)) // ~75px por columna para que no se apelotonen
+        const minWidth = Math.max(1300, (labels.length * 110))
         contenedorGrafico.style.minWidth = `${minWidth}px`
     }
 
