@@ -169,10 +169,17 @@
 
             <!-- 2. Gráfico Comparativo Principal -->
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <h3 class="text-lg font-bold text-slate-900 mb-1">Comparativa de Costes (Fijo vs Variable)</h3>
+                <div class="flex items-center justify-between mb-1">
+                    <h3 class="text-lg font-bold text-slate-900">Comparativa de Costes (Fijo vs Variable)</h3>
+                    <span class="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-md">Mostrando top 10 (desliza para ver más) ➔</span>
+                </div>
                 <p class="text-xs text-slate-500 mb-6">Desglose de costes estimados para cada tarifa analizada.</p>
-                <div class="relative h-[320px] w-full">
-                    <canvas id="chartComparativa"></canvas>
+    
+                <!-- Contenedor con scroll horizontal -->
+                <div class="overflow-x-auto pb-4">
+                    <div id="chart-scroll-container" class="h-[320px]" style="min-width: 800px;">
+                        <canvas id="chartComparativa"></canvas>
+                    </div>
                 </div>
             </div>
 
