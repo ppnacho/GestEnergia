@@ -274,6 +274,11 @@ function renderizarGrafico(renovacion, mercado) {
         plugins: {
             legend: { display: false },
             tooltip: {
+                enabled: true,
+                mode: 'index',
+                intersect: false, // <-- Activado para mejorar la detección y evitar cortes por proximidad
+                yAlign: 'bottom', // <-- Fuerza el tooltip hacia arriba de la barra
+                caretPadding: 10,
                 callbacks: {
                     label: function(context) {
                         return ` ${context.dataset.label}: ${Math.abs(context.raw).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`;
