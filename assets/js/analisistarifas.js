@@ -233,7 +233,7 @@ function renderizarGrafico(renovacion, mercado) {
     const ctxRenovacion = document.getElementById('chartRenovacionFija').getContext('2d')
     const ctxMercado = document.getElementById('chartMercadoScroll').getContext('2d')
 
-    // --- 1. RECOPILAR DATOS Y CALCULAR ESCALAS UNIFICADAS ---
+    // --- 1. DATOS Y ESCALAS UNIFICADAS ---
     const allCostesFijos = [renovacion.coste_fijo, ...mercado.map(t => t.coste_fijo)]
     const allCostesEnergia = [renovacion.coste_energia, ...mercado.map(t => t.coste_energia)]
     const allCostesExcedentes = [renovacion.coste_excedentes || 0, ...mercado.map(t => t.coste_excedentes || 0)]
@@ -244,13 +244,12 @@ function renderizarGrafico(renovacion, mercado) {
     const yMax = Math.ceil(Math.max(...maxValores) * 1.1)
     const yMin = Math.floor(Math.min(...minValores) * 1.1)
 
-    // --- 2. DATOS DE LA TARIFA FIJA (Renovación) ---
+    // --- 2. DATOS INDIVIDUALES ---
     const labelRenovacion = [renovacion.nombre]
     const costeFijoRenov = [renovacion.coste_fijo]
     const costeEnergiaRenov = [renovacion.coste_energia]
     const costeExcedentesRenov = [renovacion.coste_excedentes || 0]
 
-    // --- 3. DATOS DEL MERCADO ---
     const labelsMercado = mercado.map(t => t.nombre)
     const costesFijosMercado = mercado.map(t => t.coste_fijo)
     const costesEnergiaMercado = mercado.map(t => t.coste_energia)
@@ -265,17 +264,12 @@ function renderizarGrafico(renovacion, mercado) {
     if (chartRenovacionInstance) chartRenovacionInstance.destroy()
     if (chartMercadoInstance) chartMercadoInstance.destroy()
 
-    // Opciones unificadas y blindadas para ambos gráficos
+    // --- 3. OPCIONES MAESTRAS CON TAMAÑOS DE EJES FORZADOS (AFTERFIT) ---
     const opcionesSincronizadas = {
         responsive: true,
         maintainAspectRatio: false,
         layout: {
-            padding: {
-                left: 15,
-                right: 15,
-                top: 10,
-                bottom: 30 // Espacio generoso y fijo abajo para las etiquetas inclinadas
-            }
+            padding: { top: 10, right: 10, bottom: 5, left: 10 }
         },
         plugins: {
             legend: { display: false },
@@ -290,29 +284,25 @@ function renderizarGrafico(renovacion, mercado) {
         scales: {
             x: { 
                 grid: { display: false },
-                ticks: { 
-                    font: { size: 11 }, 
-                    maxRotation: 15, 
-                    minRotation: 15 
+                ticks: { font: { size: 11 }, maxRotation: 15, minRotation: 15 },
+                // FORZAMOS una altura idéntica para el eje X en ambos gráficos
+                afterFit: function(scaleInstance) {
+                    scaleInstance.height = 65; 
                 }
             },
             y: { 
                 grid: { color: '#f1f5f9' },
                 min: yMin,
                 max: yMax,
-                // TRUCO CLAVE: Forzamos el mismo ancho exacto (en píxeles) para la zona del eje Y 
-                // en ambos gráficos, evitando que se descuadren por la longitud de los números.
+                // FORZAMOS un ancho idéntico para el eje Y en ambos gráficos
                 afterFit: function(scaleInstance) {
-                    scaleInstance.width = 50; // Ancho fijo idéntico para las etiquetas del eje Y
-                },
-                ticks: {
-                    font: { size: 11 }
+                    scaleInstance.width = 50; 
                 }
             }
         }
     };
 
-    // --- 5. RENDERIZAR AMBOS GRÁFICOS ---
+    // --- 4. RENDERIZAR AMBOS GRÁFICOS CON LA MISMA CONFIGURACIÓN ---
     chartRenovacionInstance = new Chart(ctxRenovacion, {
         type: 'bar',
         data: {
