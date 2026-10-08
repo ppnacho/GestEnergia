@@ -112,7 +112,7 @@
             </div>
         </div>
 
-        <!-- Controles de Filtro y Botón de Análisis en horizontal -->
+        <!-- Controles de Filtro, Selector de Tarifa y Botones -->
         <div class="flex flex-col sm:flex-row flex-wrap items-center justify-between gap-4 mb-8 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
             <!-- Selectores a la izquierda -->
             <div class="flex flex-wrap items-center gap-4 w-full sm:w-auto">
@@ -128,11 +128,23 @@
                         <option value="">Selecciona año...</option>
                     </select>
                 </div>
+                <!-- NUEVO: Selector de Tarifa Alternativa para Comparar -->
+                <div class="flex flex-col">
+                    <label for="select-tarifa-comparacion" class="text-xs font-semibold text-slate-600 mb-1">Tarifa Comparativa</label>
+                    <select id="select-tarifa-comparacion" class="bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block p-2.5 min-w-[200px]">
+                        <option value="">Sin comparar (Actual)</option>
+                    </select>
+                </div>
             </div>
 
-            <!-- Botón AnalisisTarifas alineado a la derecha -->
-            <div class="w-full sm:w-auto flex justify-end">
-                <a href="../analisis/analisistarifas.html" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-md inline-flex items-center justify-center text-center w-full sm:w-auto">
+            <!-- Botones a la derecha -->
+            <div class="w-full sm:w-auto flex items-center gap-3 justify-end">
+                <!-- NUEVO: Botón Recargar Tarifas -->
+                <button id="btn-recargar-tarifas" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors border border-slate-200 inline-flex items-center gap-2">
+                    <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    Recargar Tarifas
+                </button>
+                <a href="../analisis/analisistarifas.html" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-md inline-flex items-center justify-center text-center">
                     <span>AnalisisTarifas</span>
                 </a>
             </div>
