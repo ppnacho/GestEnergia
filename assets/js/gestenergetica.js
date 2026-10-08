@@ -113,11 +113,11 @@ async function cargarDatosGrafico() {
 
         if (error) throw error;
 
-        // Renderizar con los datos de consumo, generación y los nuevos costes económicos
+        // Renderizar incluyendo ahora el coste fijo mensual (ej: data.mesesCosteFijo)
         renderizarAnillosMensuales(
             data.mesesConsumoPunta, data.mesesConsumoValle, data.mesesConsumoLlano,
             data.mesesGeneracionPunta, data.mesesGeneracionValle, data.mesesGeneracionLlano,
-            data.mesesCosteConsumo, data.mesesValorGeneracion
+            data.mesesCosteConsumo, data.mesesValorGeneracion, data.mesesCosteFijo
         );
 
     } catch (err) {
@@ -127,7 +127,8 @@ async function cargarDatosGrafico() {
 
 const mesesNombres = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle, g_llano, coste_consumo, valor_generacion) {
+// Añade coste_fijo como último parámetro en la función
+function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle, g_llano, coste_consumo, valor_generacion, coste_fijo) {
     const gridContainer = document.getElementById('meses-grid');
     if (!gridContainer) return;
 
@@ -136,19 +137,16 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
     miniCharts = [];
     gridContainer.innerHTML = '';
 
-    // Obtener año actual y mes actual (0 = Enero, 8 = Septiembre)
     const fechaActual = new Date();
     const anioActual = fechaActual.getFullYear();
     const mesActualIndex = fechaActual.getMonth(); 
     
-    // Obtener el año que el usuario tiene seleccionado en el desplegable
     const selectAnio = document.getElementById('select-anio');
     const anioSeleccionado = selectAnio ? parseInt(selectAnio.value, 10) : anioActual;
 
     mesesNombres.forEach((nombreMes, i) => {
         const card = document.createElement('div');
         
-        // Marcar como incompleto SOLO si es el mes actual y estamos viendo el año actual
         const esMesEnCurso = (anioSeleccionado === anioActual && i === mesActualIndex);
         card.className = esMesEnCurso ? 'mes-card incompleto' : 'mes-card';
 
@@ -168,8 +166,8 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
         // Obtener los valores económicos particulares de este mes
         const cc = coste_consumo ? (coste_consumo[i] || 0) : 0;
         const vg = valor_generacion ? (valor_generacion[i] || 0) : 0;
+        const cf = coste_fijo ? (coste_fijo[i] || 0) : 0; // NUEVO: Coste Fijo / Potencia
 
-        // Añadir bloque de texto económico debajo del gráfico (alineado a la izquierda y en negro)
         const infoDiv = document.createElement('div');
         infoDiv.style.marginTop = '8px';
         infoDiv.style.fontSize = '11px';
@@ -180,16 +178,17 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
 
         const costeFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cc);
         const generacionFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(vg);
+        const fijoFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cf); // NUEVO
 
         infoDiv.innerHTML = `
             <div style="color: #000000;">Consumo: ${costeFormatted}</div>
             <div style="color: #000000;">Generacion: ${generacionFormatted}</div>
+            <div style="color: #000000;">Potencia: ${fijoFormatted}</div>
         `;
         card.appendChild(infoDiv);
 
         gridContainer.appendChild(card);
 
-        // Obtener los valores de energía particulares de este mes
         const cp = c_punta[i] || 0;
         const cv = c_valle[i] || 0;
         const cl = c_llano[i] || 0;
@@ -202,7 +201,6 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
             type: 'doughnut',
             data: {
                 datasets: [
-                    // ANILLO EXTERIOR: CONSUMO
                     {
                         data: [cp, cl, cv],
                         backgroundColor: [
@@ -214,7 +212,6 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
                         borderColor: '#ffffff',
                         weight: 2 
                     },
-                    // ANILLO INTERIOR: GENERACIÓN
                     {
                         data: [gp, gl, gv],
                         backgroundColor: [
