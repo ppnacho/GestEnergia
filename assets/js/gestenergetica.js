@@ -188,10 +188,17 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
         canvasWrapper.appendChild(canvas);
         card.appendChild(canvasWrapper);
 
-        // Datos tarifa actual
-        const cc = coste_consumo ? (coste_consumo[i] || 0) : 0;
-        const vg = valor_generacion ? (valor_generacion[i] || 0) : 0;
-        const cf = coste_fijo ? (coste_fijo[i] || 0) : 0;
+        // Comprobar si hay datos de consumo o generación para este mes
+        const cp = c_punta[i] || 0;
+        const cv = c_valle[i] || 0;
+        const cl = c_llano[i] || 0;
+        const gp = g_punta[i] || 0;
+        const gv = g_valle[i] || 0;
+        const gl = g_llano[i] || 0;
+
+        const totalConsumoMes = cp + cl + cv;
+        const totalGeneracionMes = gp + gl + gv;
+        const tieneDatos = (totalConsumoMes > 0 || totalGeneracionMes > 0);
 
         const infoDiv = document.createElement('div');
         infoDiv.style.marginTop = '8px';
@@ -202,49 +209,55 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
         infoDiv.style.paddingLeft = '6px';
         infoDiv.style.width = '100%';
 
-        const costeFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cc);
-        const generacionFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(vg);
-        const fijoFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cf);
+        if (tieneDatos) {
+            // Datos tarifa actual
+            const cc = coste_consumo ? (coste_consumo[i] || 0) : 0;
+            const vg = valor_generacion ? (valor_generacion[i] || 0) : 0;
+            const cf = coste_fijo ? (coste_fijo[i] || 0) : 0;
 
-        let htmlContent = `
-            <div style="color: #000000; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 3px;">
-                <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Tarifa Actual</div>
-                <div>Consumo: ${costeFormatted}</div>
-                <div>Generación: ${generacionFormatted}</div>
-                <div>Potencia: ${fijoFormatted}</div>
-            </div>
-        `;
+            const costeFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cc);
+            const generacionFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(vg);
+            const fijoFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cf);
 
-        // Si hay una tarifa comparativa seleccionada, añadimos su bloque justo debajo
-        if (tarifaComparacion) {
-            const ccComp = coste_consumo_comp ? (coste_consumo_comp[i] || 0) : 0;
-            const vgComp = valor_generacion_comp ? (valor_generacion_comp[i] || 0) : 0;
-            const cfComp = coste_fijo_comp ? (coste_fijo_comp[i] || 0) : 0;
-
-            const costeCompF = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(ccComp);
-            const genCompF = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(vgComp);
-            const fijoCompF = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cfComp);
-
-            htmlContent += `
-                <div style="color: #0369a1; padding-top: 2px;">
-                    <div style="font-size: 10px; color: #0284c7; text-transform: uppercase; font-weight: 700;">${tarifaComparacion}</div>
-                    <div>Consumo: ${costeCompF}</div>
-                    <div>Generación: ${genCompF}</div>
-                    <div>Potencia: ${fijoCompF}</div>
+            let htmlContent = `
+                <div style="color: #000000; border-bottom: ${tarifaComparacion ? '1px solid #e2e8f0' : 'none'}; padding-bottom: 3px; margin-bottom: 3px;">
+                    <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Tarifa Actual</div>
+                    <div>Consumo: ${costeFormatted}</div>
+                    <div>Generación: ${generacionFormatted}</div>
+                    <div>Potencia: ${fijoFormatted}</div>
                 </div>
             `;
+
+            // Si hay una tarifa comparativa seleccionada, añadimos su bloque justo debajo
+            if (tarifaComparacion) {
+                const ccComp = coste_consumo_comp ? (coste_consumo_comp[i] || 0) : 0;
+                const vgComp = valor_generacion_comp ? (valor_generacion_comp[i] || 0) : 0;
+                const cfComp = coste_fijo_comp ? (coste_fijo_comp[i] || 0) : 0;
+
+                const costeCompF = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(ccComp);
+                const genCompF = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(vgComp);
+                const fijoCompF = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cfComp);
+
+                htmlContent += `
+                    <div style="color: #0369a1; padding-top: 2px;">
+                        <div style="font-size: 10px; color: #0284c7; text-transform: uppercase; font-weight: 700;">${tarifaComparacion}</div>
+                        <div>Consumo: ${costeCompF}</div>
+                        <div>Generación: ${genCompF}</div>
+                        <div>Potencia: ${fijoCompF}</div>
+                    </div>
+                `;
+            }
+            infoDiv.innerHTML = htmlContent;
+        } else {
+            // Si no hay datos, mostramos texto indicativo limpio
+            infoDiv.innerHTML = `<div style="color: #94a3b8; text-align: center; font-style: italic; padding: 4px 0;">Sin datos</div>`;
         }
 
-        infoDiv.innerHTML = htmlContent;
         card.appendChild(infoDiv);
         gridContainer.appendChild(card);
 
-        const cp = c_punta[i] || 0;
-        const cv = c_valle[i] || 0;
-        const cl = c_llano[i] || 0;
-        const gp = g_punta[i] || 0;
-        const gv = g_valle[i] || 0;
-        const gl = g_llano[i] || 0;
+        // Si no hay datos, pasamos de renderizar el gráfico donut vacío con ceros
+        if (!tieneDatos) return;
 
         const ctx = canvas.getContext('2d');
         const chartInstance = new Chart(ctx, {
