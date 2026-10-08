@@ -1,6 +1,5 @@
 import { supabase } from './supabaseClient.js';
 
-// Almacenaremos las instancias de los mini-gráficos para poder destruirlos al recargar
 let miniCharts = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -16,39 +15,60 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // --- COMPROBAR SOPORTE BIOMÉTRICO PARA OCULTAR BOTÓN SI NO ES COMPATIBLE ---
+    // --- NUEVO: Botón Recargar Tarifas (ejecuta load-tarifas-web) ---
+    const btnRecargarTarifas = document.getElementById('btn-recargar-tarifas');
+    if (btnRecargarTarifas) {
+        btnRecargarTarifas.addEventListener('click', async () => {
+            try {
+                btnRecargarTarifas.disabled = true;
+                btnRecargarTarifas.textContent = 'Actualizando...';
+                
+                const { data, error } = await supabase.functions.invoke('load-tarifas-web', {
+                    body: {}
+                });
+
+                if (error) throw error;
+                alert("¡Tarifas recargadas correctamente desde la web!");
+                
+                // Recargar los datos del panel para reflejar cambios si procede
+                cargarDatosGrafico();
+            } catch (err) {
+                console.error("Error al recargar tarifas:", err);
+                alert("Error al recargar tarifas: " + err.message);
+            } finally {
+                btnRecargarTarifas.disabled = false;
+                btnRecargarTarifas.innerHTML = `
+                    <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    Recargar Tarifas
+                `;
+            }
+        });
+    }
+
+    // --- COMPROBAR SOPORTE BIOMÉTRICO ---
     const btnRegisterPasskey = document.getElementById('btn-register-passkey');
     if (btnRegisterPasskey) {
         try {
             if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
                 const disponible = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-                if (!disponible) {
-                    btnRegisterPasskey.style.display = 'none';
-                }
+                if (!disponible) btnRegisterPasskey.style.display = 'none';
             } else {
                 btnRegisterPasskey.style.display = 'none';
             }
         } catch (error) {
-            console.error("Error al comprobar soporte biométrico:", error);
             btnRegisterPasskey.style.display = 'none';
         }
 
-        // --- Manejador para registrar la huella dactilar ---
         btnRegisterPasskey.addEventListener('click', async () => {
             try {
                 const { data, error } = await supabase.auth.registerPasskey();
-
                 if (error) throw error;
-
-                console.log("Passkey registrada con éxito:", data);
                 alert("¡Tu huella se ha vinculado correctamente a tu cuenta!");
             } catch (error) {
-                console.error("Error al registrar la huella:", error.message);
                 alert("No se pudo registrar la huella: " + error.message);
             }
         });
     }
-    // -------------------------------------------------------------------------
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
@@ -61,21 +81,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (error) throw error;
 
         const selectSuministro = document.getElementById('select-suministro');
-        selectSuministro.innerHTML = ''; // Limpiar opciones previas si las hubiera
+        selectSuministro.innerHTML = ''; 
 
-       // Se adapta para mostrar únicamente el alias (y el CUPS como respaldo por si faltase)
         data.suministros.forEach(sum => {
             const opt = document.createElement('option');
-            
             if (typeof sum === 'object' && sum !== null) {
                 opt.value = sum.cups;
                 opt.textContent = sum.alias || sum.cups;
             } else {
-                // Compatibilidad por si algún suministro viniera directamente como string (CUPS)
                 opt.value = sum;
                 opt.textContent = sum;
             }
-
             selectSuministro.appendChild(opt);
         });
 
@@ -87,7 +103,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             selectAnio.appendChild(opt);
         });
 
-        // Si se cargaron suministros y años por defecto, lanzamos la primera carga del gráfico automáticamente
+        // Rellenar selector de tarifa comparativa si la Edge Function las devuelve
+        const selectTarifaComp = document.getElementById('select-tarifa-comparacion');
+        if (data.tarifasDisponibles && selectTarifaComp) {
+            data.tarifasDisponibles.forEach(tarifaNombre => {
+                const opt = document.createElement('option');
+                opt.value = tarifaNombre;
+                opt.textContent = tarifaNombre;
+                selectTarifaComp.appendChild(opt);
+            });
+        }
+
         if (selectSuministro.value && selectAnio.value) {
             cargarDatosGrafico();
         }
@@ -98,26 +124,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('select-suministro').addEventListener('change', cargarDatosGrafico);
     document.getElementById('select-anio').addEventListener('change', cargarDatosGrafico);
+    document.getElementById('select-tarifa-comparacion').addEventListener('change', cargarDatosGrafico);
 });
 
 async function cargarDatosGrafico() {
     const suministro = document.getElementById('select-suministro').value;
     const anio = document.getElementById('select-anio').value;
+    const tarifaComparacion = document.getElementById('select-tarifa-comparacion')?.value || null;
 
     if (!suministro || !anio) return;
 
     try {
         const { data, error } = await supabase.functions.invoke('panel-energia', {
-            body: { action: 'grafico', suministro, anio }
+            body: { action: 'grafico', suministro, anio, tarifaComparacion }
         });
 
         if (error) throw error;
 
-        // Renderizar incluyendo ahora el coste fijo mensual (ej: data.mesesCosteFijo)
         renderizarAnillosMensuales(
             data.mesesConsumoPunta, data.mesesConsumoValle, data.mesesConsumoLlano,
             data.mesesGeneracionPunta, data.mesesGeneracionValle, data.mesesGeneracionLlano,
-            data.mesesCosteConsumo, data.mesesValorGeneracion, data.mesesCosteFijo
+            data.mesesCosteConsumo, data.mesesValorGeneracion, data.mesesCosteFijo,
+            data.mesesCosteConsumoComp, data.mesesValorGeneracionComp, data.mesesCosteFijoComp, tarifaComparacion
         );
 
     } catch (err) {
@@ -127,12 +155,10 @@ async function cargarDatosGrafico() {
 
 const mesesNombres = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-// Añade coste_fijo como último parámetro en la función
-function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle, g_llano, coste_consumo, valor_generacion, coste_fijo) {
+function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle, g_llano, coste_consumo, valor_generacion, coste_fijo, coste_consumo_comp, valor_generacion_comp, coste_fijo_comp, tarifaComparacion) {
     const gridContainer = document.getElementById('meses-grid');
     if (!gridContainer) return;
 
-    // Destruir gráficos anteriores
     miniCharts.forEach(chart => chart.destroy());
     miniCharts = [];
     gridContainer.innerHTML = '';
@@ -146,7 +172,6 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
 
     mesesNombres.forEach((nombreMes, i) => {
         const card = document.createElement('div');
-        
         const esMesEnCurso = (anioSeleccionado === anioActual && i === mesActualIndex);
         card.className = esMesEnCurso ? 'mes-card incompleto' : 'mes-card';
 
@@ -163,10 +188,10 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
         canvasWrapper.appendChild(canvas);
         card.appendChild(canvasWrapper);
 
-        // Obtener los valores económicos particulares de este mes
+        // Datos tarifa actual
         const cc = coste_consumo ? (coste_consumo[i] || 0) : 0;
         const vg = valor_generacion ? (valor_generacion[i] || 0) : 0;
-        const cf = coste_fijo ? (coste_fijo[i] || 0) : 0; // NUEVO: Coste Fijo / Potencia
+        const cf = coste_fijo ? (coste_fijo[i] || 0) : 0;
 
         const infoDiv = document.createElement('div');
         infoDiv.style.marginTop = '8px';
@@ -175,18 +200,43 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
         infoDiv.style.lineHeight = '1.4';
         infoDiv.style.textAlign = 'left';
         infoDiv.style.paddingLeft = '6px';
+        infoDiv.style.width = '100%';
 
         const costeFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cc);
         const generacionFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(vg);
-        const fijoFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cf); // NUEVO
+        const fijoFormatted = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cf);
 
-        infoDiv.innerHTML = `
-            <div style="color: #000000;">Consumo: ${costeFormatted}</div>
-            <div style="color: #000000;">Generacion: ${generacionFormatted}</div>
-            <div style="color: #000000;">Potencia: ${fijoFormatted}</div>
+        let htmlContent = `
+            <div style="color: #000000; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 3px;">
+                <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Tarifa Actual</div>
+                <div>Consumo: ${costeFormatted}</div>
+                <div>Generación: ${generacionFormatted}</div>
+                <div>Potencia: ${fijoFormatted}</div>
+            </div>
         `;
-        card.appendChild(infoDiv);
 
+        // Si hay una tarifa comparativa seleccionada, añadimos su bloque justo debajo
+        if (tarifaComparacion) {
+            const ccComp = coste_consumo_comp ? (coste_consumo_comp[i] || 0) : 0;
+            const vgComp = valor_generacion_comp ? (valor_generacion_comp[i] || 0) : 0;
+            const cfComp = coste_fijo_comp ? (coste_fijo_comp[i] || 0) : 0;
+
+            const costeCompF = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(ccComp);
+            const genCompF = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(vgComp);
+            const fijoCompF = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cfComp);
+
+            htmlContent += `
+                <div style="color: #0369a1; padding-top: 2px;">
+                    <div style="font-size: 10px; color: #0284c7; text-transform: uppercase; font-weight: 700;">${tarifaComparacion}</div>
+                    <div>Consumo: ${costeCompF}</div>
+                    <div>Generación: ${genCompF}</div>
+                    <div>Potencia: ${fijoCompF}</div>
+                </div>
+            `;
+        }
+
+        infoDiv.innerHTML = htmlContent;
+        card.appendChild(infoDiv);
         gridContainer.appendChild(card);
 
         const cp = c_punta[i] || 0;
@@ -203,22 +253,14 @@ function renderizarAnillosMensuales(c_punta, c_valle, c_llano, g_punta, g_valle,
                 datasets: [
                     {
                         data: [cp, cl, cv],
-                        backgroundColor: [
-                            'rgba(239, 68, 68, 0.85)',  
-                            'rgba(245, 158, 11, 0.85)', 
-                            'rgba(16, 185, 129, 0.85)'  
-                        ],
+                        backgroundColor: ['rgba(239, 68, 68, 0.85)', 'rgba(245, 158, 11, 0.85)', 'rgba(16, 185, 129, 0.85)'],
                         borderWidth: 1.5,
                         borderColor: '#ffffff',
                         weight: 2 
                     },
                     {
                         data: [gp, gl, gv],
-                        backgroundColor: [
-                            'rgba(239, 68, 68, 0.85)',  
-                            'rgba(245, 158, 11, 0.85)', 
-                            'rgba(16, 185, 129, 0.85)'  
-                        ],
+                        backgroundColor: ['rgba(239, 68, 68, 0.85)', 'rgba(245, 158, 11, 0.85)', 'rgba(16, 185, 129, 0.85)'],
                         borderWidth: 1.5,
                         borderColor: '#ffffff',
                         weight: 1.5 
