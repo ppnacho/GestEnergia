@@ -1,1 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GestEnergética - Selección de Suministro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/styles.css">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col justify-between">
 
+    <!-- Header / Navbar Minimalista -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
+                    ⚡
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">GestEnergética <span class="text-xs font-normal text-slate-500 ml-2">/ Panel Central</span></h1>
+            </div>
+            <div>
+                <button id="btn-logout" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-200">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal (Selector de Suministros) -->
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col items-center justify-center">
+        
+        <div class="text-center mb-10">
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">Área de Gestión</span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mt-3">¿Qué suministro deseas gestionar hoy?</h2>
+            <p class="text-sm text-slate-500 mt-2">Selecciona el tipo de recurso para acceder a su panel de control y analíticas.</p>
+        </div>
+
+        <!-- Tarjetas de Selección -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-2xl">
+            
+            <!-- Botón / Tarjeta Electricidad -->
+            <button id="btn-electricidad" class="group bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all text-left flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-2xl group-hover:bg-indigo-100 transition-colors -mr-10 -mt-10 pointer-events-none"></div>
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-2xl mb-6 shadow-inner">
+                        ⚡
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">Electricidad</h3>
+                    <p class="text-xs text-slate-500 mt-2 leading-relaxed">Gestión de facturas, análisis de tarifas, optimización de potencias y monitorización energética.</p>
+                </div>
+                <div class="mt-8 flex items-center text-xs font-semibold text-indigo-600 group-hover:translate-x-1 transition-transform">
+                    Acceder al panel &rarr;
+                </div>
+            </button>
+
+            <!-- Botón / Tarjeta Agua -->
+            <button id="btn-agua" class="group bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-cyan-300 transition-all text-left flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-50 rounded-full blur-2xl group-hover:bg-cyan-100 transition-colors -mr-10 -mt-10 pointer-events-none"></div>
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center text-2xl mb-6 shadow-inner">
+                        💧
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 group-hover:text-cyan-600 transition-colors">Agua</h3>
+                    <p class="text-xs text-slate-500 mt-2 leading-relaxed">Control de consumos, histórico de contadores y seguimiento de lecturas e infraestructuras de agua.</p>
+                </div>
+                <div class="mt-8 flex items-center text-xs font-semibold text-cyan-600 group-hover:translate-x-1 transition-transform">
+                    Acceder al panel &rarr;
+                </div>
+            </button>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+        GestEnergética &copy; 2026
+    </footer>
+
+    <!-- Script asociado -->
+    <script type="module" src="../assets/js/suministros.js"></script>
+</body>
+</html>
