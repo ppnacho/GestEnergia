@@ -149,7 +149,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `${context.raw.toLocaleString()} Litros`;
+                                    const litros = context.raw || 0;
+                                    const metrosCubicos = (litros / 1000).toFixed(3); // Calcula m3 con 3 decimales
+                                    return [
+                                        `${litros.toLocaleString()} Litros`,
+                                        `(${metrosCubicos} m³)`
+                                    ];
                                 }
                             }
                         }
