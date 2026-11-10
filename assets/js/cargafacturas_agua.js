@@ -1,3 +1,4 @@
+// assets/js/cargafacturas_agua.js - Lógica de carga de facturas de agua
 import { supabase } from './supabaseClient.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -6,9 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statusDiv = document.getElementById('upload-status');
     const btnSubmit = document.getElementById('btn-submit-factura');
 
-    let suministrosMap = {}; // Mapeo de alias -> número de contrato
-
-    // 1. Cargar suministros del usuario autenticado
+    // 1. Cargar suministros del usuario autenticado mediante la Edge Function
     try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -16,34 +15,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // Llamada a la Edge Function para obtener suministros de forma segura
-        const response = await fetch(`${SUPABASE_URL}/functions/v1/get-consumos-agua`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-            },
-            body: JSON.stringify({
-                accion: 'obtener-suministros',
-                userId: user.id
-            })
+        const { data, error } = await supabase.functions.invoke('get-consumos-agua', {
+            body: { accion: 'obtener-suministros', userId: user.id }
         });
 
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Error al obtener suministros');
+        if (error) throw error;
 
         selectSuministro.innerHTML = '<option value="">Selecciona un suministro de agua...</option>';
         
-        const { suministro, alias } = data;
-        
-        if (suministro && suministro.length > 0) {
+        if (data && data.suministro && Array.isArray(data.suministro)) {
+            const { suministro, alias, pot_punta } = data;
+            
             suministro.forEach((contrato, index) => {
                 const nombreAlias = alias[index] || contrato;
-                const esAgua = contrato.toLowerCase().includes('agua') || !contrato.startsWith('ES');
+                const tipo = pot_punta ? pot_punta[index] : '';
 
                 // Filtramos exclusivamente los suministros que corresponden a agua
+                const esAgua = tipo === 'agua' || contrato.toLowerCase().includes('agua') || !contrato.startsWith('ES');
+
                 if (esAgua) {
-                    suministrosMap[nombreAlias] = contrato;
                     const option = document.createElement('option');
                     option.value = contrato;
                     option.textContent = `${nombreAlias} (${contrato})`;
@@ -61,7 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         selectSuministro.innerHTML = '<option value="">Error al cargar suministros</option>';
     }
 
-    // 2. Envío del formulario y cálculo automático en cliente antes de enviar
+    // 2. Envío del formulario y cálculo automático en cliente
     formFactura.addEventListener('submit', async (e) => {
         e.preventDefault();
         statusDiv.classList.add('hidden');
@@ -94,15 +84,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnSubmit.textContent = 'Guardando...';
 
         try {
-            const session = (await supabase.auth.getSession()).data.session;
-
-            const res = await fetch(`${SUPABASE_URL}/functions/v1/carga-facturas-agua`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session?.access_token}`
-                },
-                body: JSON.stringify({
+            const { data, error } = await supabase.functions.invoke('carga-facturas-agua', {
+                body: {
                     contrato: contratoSeleccionado,
                     lectura_anterior: lecturaAnterior,
                     lectura_actual: lecturaActual,
@@ -114,11 +97,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     impuestos: impuestos,
                     total_eur: totalEur,
                     periodo: periodo
-                })
+                }
             });
 
-            const result = await res.json();
-            if (!res.ok) throw new Error(result.error || 'Error al guardar la factura');
+            if (error) throw error;
 
             showStatus('¡Factura guardada correctamente!', 'success');
             formFactura.reset();
@@ -134,9 +116,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function showStatus(message, type) {
         statusDiv.textContent = message;
-        statusDiv.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'bg-rose-50', 'text-rose-800');
+        statusDiv.classList.remove('hidden', 'bg-cyan-50', 'text-cyan-800', 'bg-rose-50', 'text-rose-800', 'border-cyan-200', 'border-rose-200');
         if (type === 'success') {
-            statusDiv.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
+            statusDiv.classList.add('bg-cyan-50', 'text-cyan-800', 'border', 'border-cyan-200');
         } else {
             statusDiv.classList.add('bg-rose-50', 'text-rose-800', 'border', 'border-rose-200');
         }
