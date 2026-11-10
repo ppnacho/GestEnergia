@@ -43,9 +43,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         checkCopiarNuevos.addEventListener('change', function() {
             const usarNuevos = this.checked;
             document.querySelectorAll('.input-usuario-precio').forEach(input => {
-                const precioActual = input.getAttribute('data-precio-actual');
+                const precioRival = input.getAttribute('data-precio-rival');
                 const precioNuevo = input.getAttribute('data-precio-nuevo');
-                input.value = parseFloat(usarNuevos ? precioNuevo : precioActual).toFixed(7);
+                input.value = parseFloat(usarNuevos ? precioNuevo : precioRival).toFixed(7);
             });
             calcularCosteConPreciosUsuario();
         });
@@ -106,12 +106,10 @@ function ejecutarSimulacionMejora() {
     const factorMeses = datosAnalisisGlobal.factor_meses_fijo || 12;
 
     const costeActualRival = tarifaRival.coste_total;
-    
-    // El coste objetivo de la contraoferta se alinea directamente al total de la tarifa de renovación
     const costeObjetivoContraoferta = Math.max(0, tarifaRenovacion.coste_total);
     const recorteNecesario = Math.max(0, costeActualRival - costeObjetivoContraoferta);
 
-    // Mostrar los valores principales en las tarjetas superiores conservadas
+    // Mostrar los valores principales en las tarjetas superiores
     document.getElementById('sim-coste-original').textContent = `${costeActualRival.toFixed(2)} €`;
     
     const labelCosteNuevo = document.getElementById('sim-coste-nuevo');
@@ -131,7 +129,7 @@ function ejecutarSimulacionMejora() {
     let factorPotencia = 0;
     let incrementoExcedente = 0;
 
-    // Repartir el recorte necesario según la estrategia seleccionada
+    // Repartir el recorte necesario sobre los precios de la tarifa rival según la estrategia
     if (recorteNecesario > 0) {
         if (estrategia === 'energia' && cEnergiaBase > 0) {
             factorEnergia = Math.min(0.90, recorteNecesario / cEnergiaBase);
@@ -149,18 +147,17 @@ function ejecutarSimulacionMejora() {
         }
     }
 
-    // Cada vez que se recalcula la simulación, desmarcamos el checkbox por limpieza
     const checkCopiarNuevos = document.getElementById('check-copiar-nuevos');
     if (checkCopiarNuevos) checkCopiarNuevos.checked = false;
 
-    renderizarTablasDetalladas(tarifaRival, estrategia, {
+    renderizarTablasDetalladas(tarifaRenovacion, tarifaRival, estrategia, {
         factorEnergia,
         factorPotencia,
         incrementoExcedente
     });
 }
 
-function renderizarTablasDetalladas(tarifa, estrategia, ajustes) {
+function renderizarTablasDetalladas(renovacion, rival, estrategia, ajustes) {
     const tbodyEnergia = document.getElementById('tabla-energia-detallada');
     const tbodyPotencia = document.getElementById('tabla-potencia-detallada');
     const tbodyExcedentes = document.getElementById('tabla-excedentes-detallada');
@@ -173,20 +170,24 @@ function renderizarTablasDetalladas(tarifa, estrategia, ajustes) {
 
     // 1. Desglose de Energía
     ['punta', 'llano', 'valle'].forEach(periodo => {
-        const precioActual = parseFloat(tarifa[periodo]) || 0; 
-        const rebaja = precioActual * ajustes.factorEnergia;
-        const precioNuevo = Math.max(0.0000001, precioActual - rebaja);
-        const diffAuto = precioNuevo - precioActual;
-        const pctAuto = precioActual > 0 ? (diffAuto / precioActual) * 100 : 0;
+        const precioRenovacion = parseFloat(renovacion[periodo]) || 0; // Columna 1: Referencia base (Renovación)
+        const precioRival = parseFloat(rival[periodo]) || 0;         // Columna 2: Tarifa Rival seleccionada (editable)
+        
+        // Precio nuevo calculado a partir de la rival aplicando la estrategia de ataque
+        const rebaja = precioRival * ajustes.factorEnergia;
+        const precioNuevo = Math.max(0.0000001, precioRival - rebaja);
+        
+        const diffAuto = precioNuevo - precioRival;
+        const pctAuto = precioRival > 0 ? (diffAuto / precioRival) * 100 : 0;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td class="py-2.5 px-4 font-medium uppercase text-slate-700">${periodo}</td>
-            <td class="py-2.5 px-4 text-right text-slate-600">${precioActual.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right text-slate-600">${precioRenovacion.toFixed(7)} €</td>
             <td class="py-2.5 px-4 text-right">
                 <input type="number" step="0.0000001" data-tipo="energia" data-periodo="${periodo}" 
-                    data-precio-actual="${precioActual}" data-precio-nuevo="${precioNuevo}"
-                    value="${precioActual.toFixed(7)}" 
+                    data-precio-rival="${precioRival}" data-precio-nuevo="${precioNuevo}"
+                    value="${precioRival.toFixed(7)}" 
                     class="input-usuario-precio w-32 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </td>
             <td class="py-2.5 px-4 text-right font-bold text-slate-900">${precioNuevo.toFixed(7)} €</td>
@@ -207,20 +208,23 @@ function renderizarTablasDetalladas(tarifa, estrategia, ajustes) {
     ];
 
     mapeoPotencia.forEach(item => {
-        const precioActual = parseFloat(tarifa[item.key]) || 0;
-        const rebaja = precioActual * ajustes.factorPotencia;
-        const precioNuevo = Math.max(0.0000001, precioActual - rebaja);
-        const diffAuto = precioNuevo - precioActual;
-        const pctAuto = precioActual > 0 ? (diffAuto / precioActual) * 100 : 0;
+        const precioRenovacion = parseFloat(renovacion[item.key]) || 0; // Columna 1: Renovación
+        const precioRival = parseFloat(rival[item.key]) || 0;         // Columna 2: Rival (editable)
+
+        const rebaja = precioRival * ajustes.factorPotencia;
+        const precioNuevo = Math.max(0.0000001, precioRival - rebaja);
+
+        const diffAuto = precioNuevo - precioRival;
+        const pctAuto = precioRival > 0 ? (diffAuto / precioRival) * 100 : 0;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td class="py-2.5 px-4 font-medium uppercase text-slate-700">${item.label}</td>
-            <td class="py-2.5 px-4 text-right text-slate-600">${precioActual.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right text-slate-600">${precioRenovacion.toFixed(7)} €</td>
             <td class="py-2.5 px-4 text-right">
                 <input type="number" step="0.0000001" data-tipo="potencia" data-periodo="${item.key}" 
-                    data-precio-actual="${precioActual}" data-precio-nuevo="${precioNuevo}"
-                    value="${precioActual.toFixed(7)}" 
+                    data-precio-rival="${precioRival}" data-precio-nuevo="${precioNuevo}"
+                    value="${precioRival.toFixed(7)}" 
                     class="input-usuario-precio w-32 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </td>
             <td class="py-2.5 px-4 text-right font-bold text-slate-900">${precioNuevo.toFixed(7)} €</td>
@@ -236,19 +240,21 @@ function renderizarTablasDetalladas(tarifa, estrategia, ajustes) {
 
     // 3. Desglose de Excedentes Solares
     if (tbodyExcedentes) {
-        const precioExcedenteActual = parseFloat(tarifa.excedente) || 0;
-        const precioExcedenteNuevo = precioExcedenteActual + ajustes.incrementoExcedente;
-        const diffAutoEx = precioExcedenteNuevo - precioExcedenteActual;
-        const pctAutoEx = precioExcedenteActual > 0 ? (diffAutoEx / precioExcedenteActual) * 100 : 0;
+        const precioExcedenteRenovacion = parseFloat(renovacion.excedente) || 0; // Columna 1: Renovación
+        const precioExcedenteRival = parseFloat(rival.excedente) || 0;         // Columna 2: Rival (editable)
+
+        const precioExcedenteNuevo = precioExcedenteRival + ajustes.incrementoExcedente;
+        const diffAutoEx = precioExcedenteNuevo - precioExcedenteRival;
+        const pctAutoEx = precioExcedenteRival > 0 ? (diffAutoEx / precioExcedenteRival) * 100 : 0;
 
         const trEx = document.createElement('tr');
         trEx.innerHTML = `
             <td class="py-2.5 px-4 font-medium uppercase text-slate-700">Excedentes Solares</td>
-            <td class="py-2.5 px-4 text-right text-slate-600">${precioExcedenteActual.toFixed(7)} €</td>
+            <td class="py-2.5 px-4 text-right text-slate-600">${precioExcedenteRenovacion.toFixed(7)} €</td>
             <td class="py-2.5 px-4 text-right">
                 <input type="number" step="0.0000001" data-tipo="excedente" data-periodo="excedente" 
-                    data-precio-actual="${precioExcedenteActual}" data-precio-nuevo="${precioExcedenteNuevo}"
-                    value="${precioExcedenteActual.toFixed(7)}" 
+                    data-precio-rival="${precioExcedenteRival}" data-precio-nuevo="${precioExcedenteNuevo}"
+                    value="${precioExcedenteRival.toFixed(7)}" 
                     class="input-usuario-precio w-32 text-right px-2 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </td>
             <td class="py-2.5 px-4 text-right font-bold text-slate-900">${precioExcedenteNuevo.toFixed(7)} €</td>
@@ -277,7 +283,7 @@ function calcularCosteConPreciosUsuario() {
     inputs.forEach(input => {
         let tipo = input.getAttribute('data-tipo');
         let periodo = input.getAttribute('data-periodo');
-        let precioActual = parseFloat(input.getAttribute('data-precio-actual')) || 0;
+        let precioRival = parseFloat(input.getAttribute('data-precio-rival')) || 0;
         let precioUser = parseFloat(input.value) || 0;
 
         if (!preciosUser[tipo]) preciosUser[tipo] = {};
@@ -285,13 +291,13 @@ function calcularCosteConPreciosUsuario() {
 
         let diffCell = document.querySelector(`[data-diff-tipo="${tipo}"][data-diff-periodo="${periodo}"]`);
         if (diffCell) {
-            let pct = precioActual > 0 ? ((precioUser - precioActual) / precioActual) * 100 : 0;
+            let pct = precioRival > 0 ? ((precioUser - precioRival) / precioRival) * 100 : 0;
 
-            if (precioUser !== precioActual) {
-                let isAhorro = tipo === 'excedente' ? (precioUser > precioActual) : (precioUser < precioActual);
+            if (precioUser !== precioRival) {
+                let isAhorro = tipo === 'excedente' ? (precioUser > precioRival) : (precioUser < precioRival);
                 let signPct = pct > 0 ? '+' : '';
 
-                diffCell.innerHTML = `${tipo === 'excedente' && precioUser > precioActual ? '+' : (isAhorro ? '-' : '+')}${Math.abs(precioUser - precioActual).toFixed(7)} € <span class="text-xs font-normal text-slate-400 ml-1">(${signPct}${pct.toFixed(1)}%)</span>`;
+                diffCell.innerHTML = `${tipo === 'excedente' && precioUser > precioRival ? '+' : (isAhorro ? '-' : '+')}${Math.abs(precioUser - precioRival).toFixed(7)} € <span class="text-xs font-normal text-slate-400 ml-1">(${signPct}${pct.toFixed(1)}%)</span>`;
                 diffCell.className = `py-2.5 px-4 text-right font-semibold whitespace-nowrap ${isAhorro ? 'text-emerald-600' : 'text-rose-600'}`;
             } else {
                 diffCell.innerHTML = `${tipo === 'excedente' ? '+' : '-'}0.0000000 € <span class="text-xs font-normal text-slate-400 ml-1">(0.0%)</span>`;
@@ -308,7 +314,7 @@ function calcularCosteConPreciosUsuario() {
     const selectRivalIndex = document.getElementById('select-tarifa-rival').value;
     if (selectRivalIndex === "") return;
 
-    const tarifaRival = datosAnalisisGlobal.mercado[selectRivalIndex];
+    const tarifaRival = mercadoFiltrado()[selectRivalIndex];
     const tarifaRenovacion = datosAnalisisGlobal.tarifa_renovacion;
 
     let pEnergia = preciosUser['energia'] || {};
