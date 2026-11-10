@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GestAgua - Panel de Control Hidráulico</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .mes-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 16px 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        .mes-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        .mes-titulo {
+            font-size: 14px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .chart-container-mini {
+            position: relative;
+            width: 100%;
+            height: 140px;
+        }
+        .pico-info {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 8px;
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 6px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col">
+
+    <!-- Header / Barra Superior con Carga CSV y Carga Facturas -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-cyan-600 flex items-center justify-center text-white font-bold text-xl shadow-md shadow-cyan-600/20">
+                    💧
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">GestAgua</h1>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <a href="../load/loadcsv_agua.html" class="bg-cyan-50 hover:bg-cyan-100 text-cyan-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-cyan-200 flex items-center gap-2">
+                    Carga CSV
+                </a>
+                <a href="../load/cargafacturas_agua.html" class="bg-cyan-50 hover:bg-cyan-100 text-cyan-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-cyan-200 flex items-center gap-2">
+                    Carga Facturas
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Controles de Filtro (Suministro y Año) -->
+        <div class="flex flex-col sm:flex-row flex-wrap items-center justify-between gap-4 mb-8 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex flex-wrap items-center gap-4 w-full sm:w-auto">
+                <div class="flex flex-col">
+                    <label for="select-suministro" class="text-xs font-semibold text-slate-600 mb-1">Suministro</label>
+                    <select id="select-suministro" class="bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block p-2.5 min-w-[220px]">
+                        <option value="">Selecciona suministro...</option>
+                    </select>
+                </div>
+                <div class="flex flex-col">
+                    <label for="select-anio" class="text-xs font-semibold text-slate-600 mb-1">Año</label>
+                    <select id="select-anio" class="bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block p-2.5 min-w-[140px]">
+                        <option value="">Selecciona año...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenedor de la Cuadrícula de Evolución Anual (12 Meses con Barras) -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Evolución Anual del Consumo de Agua</h3>
+                    <p class="text-xs text-slate-500">Comparativa mensual: Consumo Máximo Horario vs Consumo Acumulado Total (Litros)</p>
+                </div>
+                
+                <div class="flex items-center space-x-4 text-xs font-medium text-slate-600">
+                    <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-cyan-500 inline-block mr-1"></span> Máx. Horario (L)</span>
+                    <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-blue-600 inline-block mr-1"></span> Acumulado (L)</span>
+                </div>
+            </div>
+
+            <!-- Grid de 12 meses -->
+            <div id="meses-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <!-- Se inyectarán dinámicamente desde el JS -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            GestAgua &copy; 2026 - Todos los derechos reservados.
+        </div>
+    </footer>
+
+    <!-- Script modularizado -->
+    <script type="module" src="../assets/js/gestagua.js"></script>
+</body>
+</html>
