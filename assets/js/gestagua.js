@@ -150,10 +150,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                             callbacks: {
                                 label: function(context) {
                                     const litros = context.raw || 0;
-                                    const metrosCubicos = (litros / 1000).toFixed(3); // Calcula m3 con 3 decimales
+                                    const m3 = litros / 1000;
+
+                                    // Formato español: punto para miles, coma para decimales
+                                    const litrosStr = litros.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+                                    const m3Str = m3.toLocaleString('es-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+
                                     return [
-                                        `${litros.toLocaleString()} Litros`,
-                                        `(${metrosCubicos} m³)`
+                                        `${litrosStr} Litros`,
+                                        `(${m3Str} m³)`
                                     ];
                                 }
                             }
