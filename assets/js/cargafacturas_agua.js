@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (esAgua) {
                     const option = document.createElement('option');
                     option.value = contrato;
-                    option.textContent = `${nombreAlias} (${contrato})`;
+                    option.textContent = `${nombreAlias}`;
                     selectSuministro.appendChild(option);
                 }
             });
