@@ -43,26 +43,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        console.log("Usuario autenticado ID:", user.id);
-
         const { data, error } = await supabase.functions.invoke('get-consumos-agua', {
             body: { accion: 'obtener-suministros', userId: user.id }
         });
 
         if (error) throw error;
 
-        console.log("Datos recibidos de la Edge Function:", data);
+        if (data && data.suministro && Array.isArray(data.suministro)) {
+            const { suministro, alias, pot_punta } = data;
 
-        if (data && data.suministro) {
-            const suministrosAgua = data.suministro.filter(s => s.pot_punta === 'agua');
+            suministro.forEach((cups, index) => {
+                const tipo = pot_punta[index];
+                const nombreAlias = alias[index] || cups;
 
-            console.log("Suministros de agua filtrados:", suministrosAgua);
-            
-            suministrosAgua.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.cups;
-                opt.textContent = `${s.alias || s.cups} (Contrato: ${s.cups})`;
-                selectSuministro.appendChild(opt);
+                // Filtrar exclusivamente los suministros de agua
+                if (tipo === 'agua' || !cups.startsWith('ES')) {
+                    const opt = document.createElement('option');
+                    opt.value = cups;
+                    opt.textContent = nombreAlias; // Muestra únicamente el alias
+                    selectSuministro.appendChild(opt);
+                }
             });
         }
     } catch (err) {
