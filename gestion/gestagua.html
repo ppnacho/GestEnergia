@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GestAgua - Panel de Control Hidráulico</title>
+    <title>GestAgua - Panel de Control</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js CDN -->
@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
+
         .mes-card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -30,7 +31,7 @@
             font-size: 14px;
             font-weight: 700;
             color: #334155;
-            margin-bottom: 6px;
+            margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
@@ -52,7 +53,7 @@
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col">
 
-    <!-- Header / Barra Superior con Carga CSV y Carga Facturas -->
+    <!-- Header / Barra Superior -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
@@ -63,12 +64,9 @@
             </div>
             
             <div class="flex items-center space-x-3">
-                <a href="../load/loadcsv_agua.html" class="bg-cyan-50 hover:bg-cyan-100 text-cyan-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-cyan-200 flex items-center gap-2">
-                    Carga CSV
-                </a>
-                <a href="../load/cargafacturas_agua.html" class="bg-cyan-50 hover:bg-cyan-100 text-cyan-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-cyan-200 flex items-center gap-2">
-                    Carga Facturas
-                </a>
+                <button id="btn-volver" onclick="window.location.href='../suministros/suministros.html'" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-200">
+                    Volver
+                </button>
             </div>
         </div>
     </header>
@@ -76,7 +74,27 @@
     <!-- Contenido Principal -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        <!-- Controles de Filtro (Suministro y Año) -->
+        <!-- Tarjeta de Bienvenida (Idéntica estructura a GestEnergética pero con temática de agua) -->
+        <div class="bg-gradient-to-r from-cyan-600 to-blue-700 rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-cyan-900/10 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div>
+                <h2 class="text-2xl sm:text-3xl font-bold mb-2">¡Bienvenido al Panel de Control de Agua!</h2>
+                <p class="text-cyan-100 max-w-2xl text-sm sm:text-base">
+                    Sistema de gestión y monitorización hídrica avanzado. Aquí podrás supervisar tus suministros, consumos horarios y acumulados en tiempo real.
+                </p>
+            </div>
+            
+            <!-- Grupo de botones apilados (CargaCSV y CargaFacturas) -->
+            <div class="flex-shrink-0 flex flex-col items-stretch sm:items-end space-y-3 w-full sm:w-auto">
+                <a href="../load/loadcsv_agua.html" class="bg-white text-cyan-700 hover:bg-cyan-50 px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-md inline-flex items-center justify-center text-center w-full sm:w-52">
+                    <span>CargaCSV</span>
+                </a>
+                <a href="../load/cargafacturas_agua.html" class="bg-white text-cyan-700 hover:bg-cyan-50 px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-md inline-flex items-center justify-center text-center w-full sm:w-52">
+                    <span>CargaFacturas</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Controles de Filtro (Suministro y Año limpios de elementos sobrantes) -->
         <div class="flex flex-col sm:flex-row flex-wrap items-center justify-between gap-4 mb-8 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
             <div class="flex flex-wrap items-center gap-4 w-full sm:w-auto">
                 <div class="flex flex-col">
@@ -94,11 +112,11 @@
             </div>
         </div>
 
-        <!-- Contenedor de la Cuadrícula de Evolución Anual (12 Meses con Barras) -->
+        <!-- Contenedor de la Cuadrícula Anual -->
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-8">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                 <div>
-                    <h3 class="text-lg font-bold text-slate-900">Evolución Anual del Consumo de Agua</h3>
+                    <h3 class="text-lg font-bold text-slate-900">Evolución Anual</h3>
                     <p class="text-xs text-slate-500">Comparativa mensual: Consumo Máximo Horario vs Consumo Acumulado Total (Litros)</p>
                 </div>
                 
@@ -108,8 +126,8 @@
                 </div>
             </div>
 
-            <!-- Grid de 12 meses -->
-            <div id="meses-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <!-- Grid de meses (mismo formato grid de 6 columnas en desktop / adaptable) -->
+            <div id="meses-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                 <!-- Se inyectarán dinámicamente desde el JS -->
             </div>
         </div>
