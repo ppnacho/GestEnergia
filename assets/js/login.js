@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
 
                 // 3. Si todo es correcto y está activo, entramos al panel protegido
-                window.location.href = "gestion/gestenergetica.html";
+                window.location.href = "suministros/suministros.html";
 
             } catch (error) {
                 console.error("Error en el login:", error);
