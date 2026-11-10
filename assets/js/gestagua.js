@@ -43,14 +43,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        console.log("Usuario autenticado ID:", user.id);
+
         const { data, error } = await supabase.functions.invoke('get-consumos-agua', {
             body: { accion: 'obtener-suministros', userId: user.id }
         });
 
         if (error) throw error;
 
+        console.log("Datos recibidos de la Edge Function:", data);
+
         if (data && data.suministro) {
             const suministrosAgua = data.suministro.filter(s => s.pot_punta === 'agua');
+
+            console.log("Suministros de agua filtrados:", suministrosAgua);
             
             suministrosAgua.forEach(s => {
                 const opt = document.createElement('option');
