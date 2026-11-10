@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     inicializarGridMeses();
 
-    // 1. Cargar suministros del usuario logueado (filtrando los que tengan potencia "agua" o contrato de agua)
+    // 1. Cargar suministros del usuario logueado a través de la Edge Function (Cero consultas directas)
     try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -43,17 +43,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        const { data: perfil, error } = await supabase
-            .from('usuarios')
-            .select('suministros')
-            .eq('email', user.email)
-            .single();
+        const { data, error } = await supabase.functions.invoke('get-consumos-agua', {
+            body: { accion: 'obtener-suministros', email: user.email }
+        });
 
         if (error) throw error;
 
-        if (perfil && perfil.suministros) {
+        if (data && data.suministro) {
             // Filtrar aquellos suministros orientados a agua (pot_punta === 'agua')
-            const suministrosAgua = perfil.suministros.filter(s => s.pot_punta === 'agua');
+            const suministrosAgua = data.suministro.filter(s => s.pot_punta === 'agua');
             
             suministrosAgua.forEach(s => {
                 const opt = document.createElement('option');
