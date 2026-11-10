@@ -3,15 +3,11 @@ import { supabase } from './supabaseClient.js';
 let miniCharts = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const btnLogout = document.getElementById('btn-logout');
-    if (btnLogout) {
-        btnLogout.addEventListener('click', async () => {
-            const { error } = await supabase.auth.signOut();
-            if (!error) {
-                window.location.href = '../index.html'; 
-            } else {
-                console.error('Error al cerrar sesión:', error.message);
-            }
+    const btnVolver = document.getElementById('btn-volver');
+    if (btnVolver) {
+        btnVolver.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = '../suministros/suministros.html'; 
         });
     }
 
