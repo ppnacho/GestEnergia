@@ -1,4 +1,4 @@
-// assets/js/loadcsv_agua.js - Corrección para usar Edge Function en lugar de consulta directa
+// assets/js/loadcsv_agua.js - Lógica de carga conectada a la Edge Function dedicada
 import { supabase } from './supabaseClient.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -7,11 +7,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statusDiv = document.getElementById('upload-status-agua');
     const textoUltimoPeriodo = document.getElementById('texto-ultimo-periodo-agua');
 
-    // 1. Consultar el último registro en la BD a través de la Edge Function
+    // 1. Consultar el último periodo a través de la Edge Function dedicada
     async function comprobarUltimoPeriodo() {
         try {
-            // Invocamos a la Edge Function pasando un indicador de acción o consultando el estado general
-            const { data, error } = await supabase.functions.invoke('get-consumos-agua', {
+            const { data, error } = await supabase.functions.invoke('carga-consumos-agua', {
                 body: { accion: 'ultimo-periodo' }
             });
 
@@ -30,8 +29,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     await comprobarUltimoPeriodo();
-    
-    // 2. Procesar el fichero CSV al hacer clic en el botón
+
+    // 2. Procesar el fichero CSV y enviarlo en lotes a la Edge Function
     btnUpload.addEventListener('click', async () => {
         const file = fileInput.files[0];
         if (!file) {
@@ -40,7 +39,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         const reader = new FileReader();
-        
         btnUpload.disabled = true;
         btnUpload.textContent = 'Procesando...';
         mostrarMensaje('Leyendo y parseando fichero CSV...', 'info');
@@ -49,46 +47,55 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const text = e.target.result;
                 const lineas = text.split(/\r\n|\n/);
-                
                 const registrosAInsertar = [];
 
-                // Omitir cabecera (fila 0) y recorrer el resto
+                // Omitir cabecera (fila 0)
                 for (let i = 1; i < lineas.length; i++) {
                     const linea = lineas[i].trim();
                     if (!linea) continue;
 
-                    // El CSV puede venir separado por comas, tabuladores o espacios múltiples (según el formato de origen)
-                    // Vamos a parsear adaptándonos a separadores comunes o espacios en columnas fijas
-                    const columnas = parsearLineaCSV(linea);
+                    const col = linea.split(/\t|,|;/).map(c => c.trim().replace(/^["']|["']$/g, ''));
 
-                    if (columnas.length >= 6) {
-                        // Basándonos en la estructura visual de tu CSV:
-                        // [0] Contrato, [1..] Dirección, [Contador], [Frecuencia], [Periodo], [Fecha/Hora], [Consumo]
-                        // O mapeando por posiciones clave:
-                        const contrato = columnas[0];
-                        // Buscamos el identificador de contador (empieza por letra ej. S23...)
-                        const contador = columnas.find(c => /^S[0-9A-Z]+/i.test(c)) || columnas[1]; 
-                        
-                        // Extraer Fecha/Hora y Consumo de las últimas columnas
-                        const consumoStr = columnas[columnas.length - 1].replace(',', '.');
-                        const consumoLitros = parseFloat(consumoStr) || 0;
+                    if (col.length >= 6) {
+                        const contrato = col[0];
+                        const contador = col[2];
+                        const fechaHoraTexto = col[5]; // Ajustar según posición real de fecha/hora en tu CSV
+                        const consumo = parseFloat(col[6].replace(',', '.')) || 0;
 
-                        // La fecha/hora suele venir en formato "DD/MM/YYYY HH" o similar
-                        const fechaHoraRaw = `${columnas[columnas.length - 2]} ${columnas[columnas.length - 1]}`; // Ajustar según formato exacto
-                        
-                        // Transformar "04/07/2026 01" a formato ISO "2026-07-04T01:00:00Z"
-                        const fechaISO = convertirFechaHoraAISO(columnas[columnas.length - 3] + ' ' + columnas[columnas.length - 2]); // Dependiendo del split exacto
+                        const fechaISO = parsearFechaAISO(fechaHoraTexto);
 
-                        // Construir objeto para la tabla consumos_agua
-                        // (Nota: Ajustaremos la extracción exacta según el delimitador de tu CSV real)
+                        if (fechaISO) {
+                            registrosAInsertar.push({
+                                compañia: 'Canal Isabel II',
+                                contrato: contrato,
+                                id_contador: contador,
+                                fecha_hora: fechaISO,
+                                consumo_litros: consumo
+                            });
+                        }
                     }
                 }
 
-                // Ejemplo de inserción en lotes (batch) hacia Supabase
-                // const { error: insertError } = await supabase.from('consumos_agua').insert(registrosAInsertar);
-                // if (insertError) throw insertError;
+                if (registrosAInsertar.length === 0) {
+                    throw new Error("No se encontraron registros válidos en el CSV.");
+                }
 
-                mostrarMensaje('¡Archivo CSV procesado y cargado con éxito!', 'success');
+                // Enviar en lotes (batch) de 500 para evitar saturar la petición
+                const BATCH_SIZE = 500;
+                for (let j = 0; j < registrosAInsertar.length; j += BATCH_SIZE) {
+                    const lote = registrosAInsertar.slice(j, j + BATCH_SIZE);
+
+                    const { error: insertError } = await supabase.functions.invoke('carga-consumos-agua', {
+                        body: {
+                            accion: 'insertar-consumos',
+                            registros: lote
+                        }
+                    });
+
+                    if (insertError) throw insertError;
+                }
+
+                mostrarMensaje(`¡${registrosAInsertar.length} registros cargados con éxito!`, 'success');
                 await comprobarUltimoPeriodo();
 
             } catch (err) {
@@ -100,7 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         };
 
-        reader.readAsText(file, 'ISO-8859-1'); // O 'UTF-8' según la codificación de tu CSV de agua
+        reader.readAsText(file, 'ISO-8859-1');
     });
 
     function mostrarMensaje(texto, tipo) {
@@ -115,21 +122,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         statusDiv.textContent = texto;
     }
 
-    function parsearLineaCSV(linea) {
-        // Limpieza y división por separador habitual (tabulador, punto y coma o coma)
-        return linea.split(/,|\t|;/).map(c => c.trim().replace(/^["']|["']$/g, ''));
-    }
-
-    function convertirFechaHoraAISO(strFechaHora) {
-        // Ejemplo de conversor para formato "DD/MM/YYYY HH" -> "YYYY-MM-DDTHH:00:00Z"
+    function parsearFechaAISO(strFechaHora) {
+        // Conversor robusto para formato de fecha/hora del CSV
         try {
             const partes = strFechaHora.split(' ');
             if (partes.length < 2) return null;
             const fechaPartes = partes[0].split('/');
             if (fechaPartes.length < 3) return null;
             const anio = fechaPartes[2];
-            const mes = fechaPartes[1];
-            const dia = fechaPartes[0];
+            const mes = fechaPartes[1].padStart(2, '0');
+            const dia = fechaPartes[0].padStart(2, '0');
             const hora = partes[1].padStart(2, '0');
 
             return `${anio}-${mes}-${dia}T${hora}:00:00Z`;
