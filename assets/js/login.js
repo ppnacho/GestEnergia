@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
 
                 // Si todo es correcto, redirigimos al panel
-                window.location.href = "gestion/gestenergetica.html";
+                window.location.href = "suministros/suministros.html";
 
             } catch (error) {
                 console.error("Error al iniciar sesión con huella:", error);
