@@ -44,18 +44,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         const { data, error } = await supabase.functions.invoke('get-consumos-agua', {
-            body: { accion: 'obtener-suministros', email: user.email }
+            body: { accion: 'obtener-suministros', userId: user.id }
         });
 
         if (error) throw error;
 
         if (data && data.suministro) {
-            // Filtrar aquellos suministros orientados a agua (pot_punta === 'agua')
             const suministrosAgua = data.suministro.filter(s => s.pot_punta === 'agua');
             
             suministrosAgua.forEach(s => {
                 const opt = document.createElement('option');
-                opt.value = s.cups; // Contrato / CUPS de agua
+                opt.value = s.cups;
                 opt.textContent = `${s.alias || s.cups} (Contrato: ${s.cups})`;
                 selectSuministro.appendChild(opt);
             });
