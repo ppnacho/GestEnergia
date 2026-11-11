@@ -152,7 +152,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     const litros = context.raw || 0;
                                     const m3 = litros / 1000;
 
-                                    // Formato español: punto para miles, coma para decimales
                                     const litrosStr = litros.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
                                     const m3Str = m3.toLocaleString('es-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 
@@ -178,12 +177,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
 
-            // Actualizar etiqueta inferior con la fecha y hora del consumo máximo
+            // Actualizar etiqueta inferior según el diseño solicitado
             const picoContainer = document.getElementById(picoDivId);
-            if (infoMes.maxHorario > 0) {
+            const esMesPar = mesNum % 2 === 0;
+
+            if (infoMes.maxHorario > 0 || infoMes.consumoAcumulado > 0) {
+                // Extraer el día de la fecha de maximo horario (ej: "2026-07-06 00:00" -> "6")
+                let diaStr = '--';
+                if (infoMes.fechaHoraMax) {
+                    const partesFecha = infoMes.fechaHoraMax.split(' ')[0].split('-');
+                    if (partesFecha.length === 3) {
+                        diaStr = parseInt(partesFecha[2], 10);
+                    }
+                }
+
+                let htmlFacturacion = '';
+                if (esMesPar) {
+                    const totalEur = (infoMes.totalEur || 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    const consumoM3Factura = (infoMes.consumoM3 || 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    htmlFacturacion = `<br><span class="text-[10px] font-semibold text-slate-700">${totalEur} € (${consumoM3Factura} m³)</span>`;
+                }
+
                 picoContainer.innerHTML = `
-                    Máx: <b>${infoMes.maxHorario} L</b><br>
-                    <span class="text-[10px] text-slate-500">${infoMes.fechaHoraMax || '--'}</span>
+                    Máx: <b>${infoMes.maxHorario} L</b> <span class="text-[11px] text-slate-500">(Día ${diaStr})</span>
+                    ${htmlFacturacion}
                 `;
             } else {
                 picoContainer.innerHTML = `Máx: 0 L<br><span class="text-[10px] text-slate-400">Sin registros</span>`;
