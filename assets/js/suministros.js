@@ -22,6 +22,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = '../gestion/gestagua.html';
     });
 
+    document.getElementById('btn-telefonia').addEventListener('click', () => {
+        // Redirige al futuro panel de agua
+        window.location.href = '../gestion/gesttelefono.html';
+    });
+
     // 3. Botón de Cerrar Sesión
     document.getElementById('btn-logout').addEventListener('click', async () => {
         await supabase.auth.signOut();
