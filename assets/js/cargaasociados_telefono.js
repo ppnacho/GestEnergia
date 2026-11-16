@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         inputLinea.value = inputLinea.value.replace(/\D/g, '').slice(0, 9);
     });
 
-    // 3. Cálculo automático: Base Imponible = (precio_base + consumo_extra + gasto_extra)
+    // 3. Cálculo automático con 4 decimales: Base Imponible y Cuota IVA (€)
     const calcularImportes = () => {
         const base = parseFloat(inputPrecioBase.value) || 0;
         const consumoExtra = parseFloat(inputConsumoExtra.value) || 0;
@@ -33,10 +33,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const pctIva = parseFloat(inputIvaPct.value) || 0;
 
         const baseImponible = base + consumoExtra + gastoExtra;
-        const cuotaIvaEuros = Number((baseImponible * (pctIva / 100)).toFixed(2));
-        const totalFactura = Number((baseImponible + cuotaIvaEuros).toFixed(2));
+        const cuotaIvaEuros = Number((baseImponible * (pctIva / 100)).toFixed(4));
+        const totalFactura = Number((baseImponible + cuotaIvaEuros).toFixed(4));
 
-        inputTotal.value = totalFactura.toFixed(2);
+        inputTotal.value = totalFactura.toFixed(4);
         return { cuotaIvaEuros, totalFactura };
     };
 
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const { cuotaIvaEuros } = calcularImportes();
         const total = parseFloat(inputTotal.value);
         
-        // Ingresos opcionales (si están vacíos, se envían como 0.00)
+        // Ingresos opcionales
         const ingreso_linea = parseFloat(document.getElementById('input-ingreso-linea').value) || 0;
         const ingreso_extras = parseFloat(document.getElementById('input-ingreso-extras').value) || 0;
 
@@ -102,8 +102,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             form.reset();
             
             // Restablecer valores por defecto
-            inputConsumoExtra.value = '0.00';
-            inputGastoExtra.value = '0.00';
+            inputConsumoExtra.value = '0.0000';
+            inputGastoExtra.value = '0.0000';
             inputIvaPct.value = '21';
 
         } catch (err) {
