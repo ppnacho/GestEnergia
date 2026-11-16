@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const gastoExtra = parseFloat(inputGastoExtra.value) || 0;
         const pctIva = parseFloat(inputIvaPct.value) || 0;
 
-        const baseImponible = base + consumo + gastoExtra;
+        const baseImponible = base + consumo;
         const cuotaIvaEuros = Number((baseImponible * (pctIva / 100)).toFixed(4));
         const totalFactura = Number((baseImponible + cuotaIvaEuros).toFixed(4));
 
