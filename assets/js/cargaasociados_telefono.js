@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const inputLinea = document.getElementById('input-linea');
     const inputPrecioBase = document.getElementById('input-precio-base');
-    const inputConsumoExtra = document.getElementById('input-consumo-extra');
+    const inputConsumo = document.getElementById('input-consumo');
     const inputGastoExtra = document.getElementById('input-gasto-extra');
     const inputIvaPct = document.getElementById('input-iva-pct');
     const inputTotal = document.getElementById('input-total');
@@ -28,11 +28,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 3. Cálculo automático con 4 decimales: Base Imponible y Cuota IVA (€)
     const calcularImportes = () => {
         const base = parseFloat(inputPrecioBase.value) || 0;
-        const consumoExtra = parseFloat(inputConsumoExtra.value) || 0;
+        const consumo = parseFloat(inputConsumo.value) || 0;
         const gastoExtra = parseFloat(inputGastoExtra.value) || 0;
         const pctIva = parseFloat(inputIvaPct.value) || 0;
 
-        const baseImponible = base + consumoExtra + gastoExtra;
+        const baseImponible = base + consumo + gastoExtra;
         const cuotaIvaEuros = Number((baseImponible * (pctIva / 100)).toFixed(4));
         const totalFactura = Number((baseImponible + cuotaIvaEuros).toFixed(4));
 
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const fecha_factura = document.getElementById('input-fecha-factura').value;
         const linea = inputLinea.value.trim();
         const precio_base = parseFloat(inputPrecioBase.value);
-        const consumo_extra = parseFloat(inputConsumoExtra.value) || 0;
+        const consumo = parseFloat(inputConsumo.value) || 0;
         const gasto_extra = parseFloat(inputGastoExtra.value) || 0;
         const { cuotaIvaEuros } = calcularImportes();
         const total = parseFloat(inputTotal.value);
@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     fecha_factura,
                     linea,
                     precio_base,
-                    consumo_extra,
+                    consumo,
                     gasto_extra,
                     iva: cuotaIvaEuros,
                     total,
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             form.reset();
             
             // Restablecer valores por defecto
-            inputConsumoExtra.value = '0.0000';
+            inputConsumo.value = '0.0000';
             inputGastoExtra.value = '0.0000';
             inputIvaPct.value = '21';
 
