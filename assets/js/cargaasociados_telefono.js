@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const inputLinea = document.getElementById('input-linea');
     const inputPrecioBase = document.getElementById('input-precio-base');
     const inputConsumoExtra = document.getElementById('input-consumo-extra');
+    const inputGastoExtra = document.getElementById('input-gasto-extra');
     const inputIvaPct = document.getElementById('input-iva-pct');
     const inputTotal = document.getElementById('input-total');
 
@@ -24,13 +25,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         inputLinea.value = inputLinea.value.replace(/\D/g, '').slice(0, 9);
     });
 
-    // 3. Cálculo automático: IVA (€) correspondiente a (base + extra) y Total (€)
+    // 3. Cálculo automático: Base Imponible = (precio_base + consumo_extra + gasto_extra)
     const calcularImportes = () => {
         const base = parseFloat(inputPrecioBase.value) || 0;
-        const extra = parseFloat(inputConsumoExtra.value) || 0;
+        const consumoExtra = parseFloat(inputConsumoExtra.value) || 0;
+        const gastoExtra = parseFloat(inputGastoExtra.value) || 0;
         const pctIva = parseFloat(inputIvaPct.value) || 0;
 
-        const baseImponible = base + extra;
+        const baseImponible = base + consumoExtra + gastoExtra;
         const cuotaIvaEuros = Number((baseImponible * (pctIva / 100)).toFixed(2));
         const totalFactura = Number((baseImponible + cuotaIvaEuros).toFixed(2));
 
@@ -60,9 +62,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const linea = inputLinea.value.trim();
         const precio_base = parseFloat(inputPrecioBase.value);
         const consumo_extra = parseFloat(inputConsumoExtra.value) || 0;
-        const { cuotaIvaEuros } = calcularImportes(); // Se envía el IVA calculado en euros
+        const gasto_extra = parseFloat(inputGastoExtra.value) || 0;
+        const { cuotaIvaEuros } = calcularImportes();
         const total = parseFloat(inputTotal.value);
-        const ingreso_linea = parseFloat(document.getElementById('input-ingreso-linea').value);
+        
+        // Ingresos opcionales (si están vacíos, se envían como 0.00)
+        const ingreso_linea = parseFloat(document.getElementById('input-ingreso-linea').value) || 0;
         const ingreso_extras = parseFloat(document.getElementById('input-ingreso-extras').value) || 0;
 
         if (!/^\d{9}$/.test(linea)) {
@@ -82,6 +87,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     linea,
                     precio_base,
                     consumo_extra,
+                    gasto_extra,
                     iva: cuotaIvaEuros,
                     total,
                     ingreso_linea,
@@ -97,8 +103,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             // Restablecer valores por defecto
             inputConsumoExtra.value = '0.00';
+            inputGastoExtra.value = '0.00';
             inputIvaPct.value = '21';
-            document.getElementById('input-ingreso-extras').value = '0.00';
 
         } catch (err) {
             console.error('Error al guardar asociado:', err);
