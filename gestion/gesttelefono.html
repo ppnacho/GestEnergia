@@ -41,7 +41,7 @@
             <div>
                 <h2 class="text-2xl sm:text-3xl font-bold mb-2">¡Bienvenido al Panel de Control de Telefonía!</h2>
                 <p class="text-emerald-100 max-w-2xl text-sm sm:text-base">
-                    Sistema de gestión de telecomunicaciones. Supervisa el consumo, tarifas, líneas asociadas y desglose mensual de facturación.
+                    Sistema de gestión de telecomunicaciones. Supervisa el consumo, tarifas, líneas asociadas y el balance acumulado por propietario.
                 </p>
             </div>
             
@@ -56,35 +56,19 @@
             </div>
         </div>
 
-        <!-- Controles de Filtro (Línea y Año) -->
-        <div class="flex flex-col sm:flex-row flex-wrap items-center justify-between gap-4 mb-8 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-            <div class="flex flex-wrap items-center gap-4 w-full sm:w-auto">
-                <div class="flex flex-col">
-                    <label for="select-linea" class="text-xs font-semibold text-slate-600 mb-1">Línea</label>
-                    <select id="select-linea" class="bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block p-2.5 min-w-[220px]">
-                        <option value="">Selecciona línea...</option>
-                    </select>
-                </div>
-                <div class="flex flex-col">
-                    <label for="select-anio" class="text-xs font-semibold text-slate-600 mb-1">Año</label>
-                    <select id="select-anio" class="bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block p-2.5 min-w-[140px]">
-                        <option value="">Selecciona año...</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <!-- Contenedor de Resumen de Datos (Pendiente de definición) -->
+        <!-- Contenedor de Resumen de Datos -->
         <div id="resumen-datos-container" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-8">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                 <div>
-                    <h3 class="text-lg font-bold text-slate-900">Resumen de Datos</h3>
-                    <p class="text-xs text-slate-500">Selecciona una línea y un año para visualizar el desglose de facturación y consumos.</p>
+                    <h3 class="text-lg font-bold text-slate-900">Resumen de Datos por Propietario</h3>
+                    <p class="text-xs text-slate-500">Balance acumulado: Ingresos (línea + extras) frente a Gastos (total factura + gasto extra).</p>
                 </div>
             </div>
             
-            <div id="resumen-contenido" class="py-12 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                <p class="text-sm text-slate-400 font-medium">Módulo de resumen pendiente de definición</p>
+            <div id="resumen-contenido" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="col-span-full py-12 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                    <p class="text-sm text-slate-400 font-medium">Cargando balances por propietario...</p>
+                </div>
             </div>
         </div>
 
