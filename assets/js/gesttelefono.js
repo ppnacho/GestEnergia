@@ -2,6 +2,10 @@
 import { supabase } from './supabaseClient.js';
 
 const PROPIETARIOS = ['Luisi', 'Goya', 'Elena'];
+const MESES_ES = [
+    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+];
 
 /**
  * Plugin personalizado de Chart.js para dibujar la aguja y el marcador central de 0°
@@ -69,8 +73,19 @@ const gaugeNeedlePlugin = {
     }
 };
 
+function formatearUltimoMes(fechaISO) {
+    if (!fechaISO) return null;
+    const partes = fechaISO.split('-'); // [YYYY, MM, DD]
+    if (partes.length < 2) return null;
+    const anio = partes[0];
+    const mesIndex = parseInt(partes[1], 10) - 1;
+    const nombreMes = MESES_ES[mesIndex] || '';
+    return nombreMes ? `${nombreMes}-${anio}` : null;
+
 document.addEventListener('DOMContentLoaded', async () => {
     const resumenContenido = document.getElementById('resumen-contenido');
+    const ultimoRegistroContainer = document.getElementById('ultimo-registro-container');
+    const ultimoRegistroTexto = document.getElementById('ultimo-registro-texto');
 
     // 1. Verificar sesión de usuario
     try {
@@ -88,6 +103,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const balances = data.balances || {};
         renderizarGauges(resumenContenido, balances);
+
+        // 3. Mostrar última fecha registrada en formato ULTIMO-REGISTRO: mes-año
+        const mesAnioFormateado = formatearUltimoMes(data.ultima_fecha);
+        if (mesAnioFormateado) {
+            ultimoRegistroTexto.textContent = `ULTIMO-REGISTRO: ${mesAnioFormateado}`;
+            ultimoRegistroContainer.classList.remove('hidden');
+        }
 
     } catch (err) {
         console.error('Error al cargar el resumen de telefonía:', err);
