@@ -81,6 +81,7 @@ function formatearUltimoMes(fechaISO) {
     const mesIndex = parseInt(partes[1], 10) - 1;
     const nombreMes = MESES_ES[mesIndex] || '';
     return nombreMes ? `${nombreMes}-${anio}` : null;
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     const resumenContenido = document.getElementById('resumen-contenido');
