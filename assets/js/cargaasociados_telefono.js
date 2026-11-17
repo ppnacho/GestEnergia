@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnSubmit = document.getElementById('btn-submit-asociado');
 
     const inputLinea = document.getElementById('input-linea');
+    const inputPropietario = document.getElementById('input-propietario');
     const inputPrecioBase = document.getElementById('input-precio-base');
     const inputConsumo = document.getElementById('input-consumo');
     const inputGastoExtra = document.getElementById('input-gasto-extra');
@@ -60,6 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const fecha_factura = document.getElementById('input-fecha-factura').value;
         const linea = inputLinea.value.trim();
+        const propiedad = inputPropietario.value;
         const precio_base = parseFloat(inputPrecioBase.value);
         const consumo = parseFloat(inputConsumo.value) || 0;
         const gasto_extra = parseFloat(inputGastoExtra.value) || 0;
@@ -76,6 +78,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        if (!propiedad) {
+            mostrarEstado('Debes seleccionar un propietario.', true);
+            inputPropietario.focus();
+            return;
+        }
+
         btnSubmit.disabled = true;
         btnSubmit.textContent = 'Guardando...';
         statusDiv.classList.add('hidden');
@@ -85,6 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 body: {
                     fecha_factura,
                     linea,
+                    propiedad,
                     precio_base,
                     consumo,
                     gasto_extra,
